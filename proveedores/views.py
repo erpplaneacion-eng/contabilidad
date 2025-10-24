@@ -1,5 +1,7 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
+from django.contrib.auth.decorators import login_required
+from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db import transaction
 from django.views.generic import CreateView, UpdateView, ListView, DetailView
 from django.urls import reverse_lazy
@@ -151,22 +153,24 @@ def success_view(request, pk):
     return render(request, 'proveedores/success.html', context)
 
 
-class ProveedorListView(ListView):
-    """Vista para listar todos los proveedores (solo para staff)"""
+class ProveedorListView(LoginRequiredMixin, ListView):
+    """Vista para listar todos los proveedores (solo para usuarios autenticados)"""
 
     model = Proveedor
     template_name = 'proveedores/proveedor_list.html'
     context_object_name = 'proveedores'
     paginate_by = 20
     ordering = ['-fecha_creacion']
+    login_url = '/login/'
 
 
-class ProveedorDetailView(DetailView):
-    """Vista para ver el detalle de un proveedor"""
+class ProveedorDetailView(LoginRequiredMixin, DetailView):
+    """Vista para ver el detalle de un proveedor (solo para usuarios autenticados)"""
 
     model = Proveedor
     template_name = 'proveedores/proveedor_detail.html'
     context_object_name = 'proveedor'
+    login_url = '/login/'
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)

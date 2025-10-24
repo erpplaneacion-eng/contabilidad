@@ -1,0 +1,296 @@
+{% extends 'proveedores/base.html' %}
+{% load static %}
+
+{% block title %}Detalle - {{ proveedor.nombre_razon_social }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <!-- Encabezado -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <h2><i class="fas fa-building"></i> {{ proveedor.nombre_razon_social }}</h2>
+                <div>
+                    <a href="{% url 'proveedores:actualizar' proveedor.pk %}" class="btn btn-warning">
+                        <i class="fas fa-edit"></i> Editar
+                    </a>
+                    <a href="{% url 'proveedores:lista' %}" class="btn btn-secondary">
+                        <i class="fas fa-arrow-left"></i> Volver a Lista
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Columna Izquierda -->
+        <div class="col-md-6">
+            <!-- Información General -->
+            <div class="card mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="fas fa-info-circle"></i> Información General</h5>
+                </div>
+                <div class="card-body">
+                    <table class="table table-borderless">
+                        <tr>
+                            <th width="40%">ID:</th>
+                            <td><strong>{{ proveedor.id }}</strong></td>
+                        </tr>
+                        <tr>
+                            <th>Razón Social:</th>
+                            <td>{{ proveedor.nombre_razon_social }}</td>
+                        </tr>
+                        <tr>
+                            <th>Naturaleza Jurídica:</th>
+                            <td><span class="badge bg-info">{{ proveedor.get_naturaleza_juridica_display }}</span></td>
+                        </tr>
+                        <tr>
+                            <th>Tipo ID:</th>
+                            <td>{{ proveedor.get_tipo_identificacion_display }}</td>
+                        </tr>
+                        <tr>
+                            <th>Número ID:</th>
+                            <td><strong>{{ proveedor.numero_identificacion }}</strong></td>
+                        </tr>
+                        <tr>
+                            <th>Fecha Diligenciamiento:</th>
+                            <td>{{ proveedor.fecha_diligenciamiento|date:"d/m/Y" }}</td>
+                        </tr>
+                        <tr>
+                            <th>Fecha Registro:</th>
+                            <td>{{ proveedor.fecha_creacion|date:"d/m/Y H:i" }}</td>
+                        </tr>
+                        <tr>
+                            <th>Última Actualización:</th>
+                            <td>{{ proveedor.fecha_actualizacion|date:"d/m/Y H:i" }}</td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Ubicación -->
+            <div class="card mb-4">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0"><i class="fas fa-map-marker-alt"></i> Ubicación y Contacto</h5>
+                </div>
+                <div class="card-body">
+                    <table class="table table-borderless">
+                        <tr>
+                            <th width="40%">Dirección:</th>
+                            <td>{{ proveedor.direccion }}</td>
+                        </tr>
+                        <tr>
+                            <th>País:</th>
+                            <td>{{ proveedor.pais }}</td>
+                        </tr>
+                        <tr>
+                            <th>Departamento:</th>
+                            <td>{{ proveedor.departamento }}</td>
+                        </tr>
+                        <tr>
+                            <th>Ciudad:</th>
+                            <td>{{ proveedor.ciudad }}</td>
+                        </tr>
+                        <tr>
+                            <th>Teléfono:</th>
+                            <td><i class="fas fa-phone"></i> {{ proveedor.telefono }}</td>
+                        </tr>
+                        <tr>
+                            <th>Celular:</th>
+                            <td><i class="fas fa-mobile-alt"></i> {{ proveedor.celular }}</td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Condiciones de Pago -->
+            <div class="card mb-4">
+                <div class="card-header bg-warning">
+                    <h5 class="mb-0"><i class="fas fa-credit-card"></i> Condiciones de Pago</h5>
+                </div>
+                <div class="card-body">
+                    <h6>{{ proveedor.get_condicion_pago_display }}</h6>
+                    {% if proveedor.condicion_pago_otro %}
+                        <p class="text-muted mb-0">{{ proveedor.condicion_pago_otro }}</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Columna Derecha -->
+        <div class="col-md-6">
+            <!-- Contactos -->
+            <div class="card mb-4">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0"><i class="fas fa-address-book"></i> Contactos Adicionales</h5>
+                </div>
+                <div class="card-body">
+                    {% if contactos %}
+                        {% for contacto in contactos %}
+                        <div class="contact-item mb-3 p-3 border rounded">
+                            <h6 class="text-primary">{{ contacto.nombre_apellidos }}</h6>
+                            <p class="mb-1"><strong>Cargo:</strong> {{ contacto.cargo }}</p>
+                            <p class="mb-1"><i class="fas fa-envelope"></i> {{ contacto.correo_electronico }}</p>
+                            <p class="mb-1"><i class="fas fa-phone"></i> {{ contacto.telefono }}</p>
+                            <p class="mb-1"><i class="fas fa-mobile-alt"></i> {{ contacto.celular }}</p>
+                            <p class="mb-0"><i class="fas fa-map-marker-alt"></i> {{ contacto.direccion }}, {{ contacto.ciudad }}</p>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <p class="text-muted">No hay contactos adicionales registrados</p>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Impuestos -->
+            <div class="card mb-4">
+                <div class="card-header bg-danger text-white">
+                    <h5 class="mb-0"><i class="fas fa-receipt"></i> Impuestos y Retenciones</h5>
+                </div>
+                <div class="card-body">
+                    {% if impuestos %}
+                        <div class="table-responsive">
+                            <table class="table table-sm">
+                                <thead>
+                                    <tr>
+                                        <th>Tipo</th>
+                                        <th>Aplica</th>
+                                        <th>%</th>
+                                        <th>Tarifa</th>
+                                        <th>CIIU</th>
+                                        <th>Municipio</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for impuesto in impuestos %}
+                                    <tr>
+                                        <td>{{ impuesto.get_tipo_impuesto_display }}</td>
+                                        <td>
+                                            {% if impuesto.aplica %}
+                                                <span class="badge bg-success">Sí</span>
+                                            {% else %}
+                                                <span class="badge bg-secondary">No</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>{{ impuesto.porcentaje|default:"-" }}</td>
+                                        <td>{{ impuesto.tarifa|default:"-" }}</td>
+                                        <td>{{ impuesto.codigo_actividad_economica|default:"-" }}</td>
+                                        <td>{{ impuesto.municipio|default:"-" }}</td>
+                                    </tr>
+                                    {% if impuesto.otro_concepto %}
+                                    <tr>
+                                        <td colspan="6" class="text-muted small">
+                                            <strong>Concepto:</strong> {{ impuesto.otro_concepto }}
+                                        </td>
+                                    </tr>
+                                    {% endif %}
+                                    {% if impuesto.resolucion_exento %}
+                                    <tr>
+                                        <td colspan="6" class="text-muted small">
+                                            <strong>Resolución exento:</strong> {{ impuesto.resolucion_exento }}
+                                        </td>
+                                    </tr>
+                                    {% endif %}
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <p class="text-muted">No hay información de impuestos registrada</p>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Documentos -->
+            <div class="card mb-4">
+                <div class="card-header bg-secondary text-white">
+                    <h5 class="mb-0"><i class="fas fa-file-upload"></i> Documentos</h5>
+                </div>
+                <div class="card-body">
+                    {% if documentos %}
+                        <ul class="list-group list-group-flush">
+                            {% if documentos.fotocopia_rut %}
+                            <li class="list-group-item">
+                                <i class="fas fa-file-pdf text-danger"></i>
+                                <a href="{{ documentos.fotocopia_rut.url }}" target="_blank">RUT</a>
+                            </li>
+                            {% endif %}
+                            {% if documentos.solicitud_vinculacion %}
+                            <li class="list-group-item">
+                                <i class="fas fa-file-pdf text-danger"></i>
+                                <a href="{{ documentos.solicitud_vinculacion.url }}" target="_blank">Solicitud de Vinculación</a>
+                            </li>
+                            {% endif %}
+                            {% if documentos.certificado_camara_comercio %}
+                            <li class="list-group-item">
+                                <i class="fas fa-file-pdf text-danger"></i>
+                                <a href="{{ documentos.certificado_camara_comercio.url }}" target="_blank">Cámara de Comercio</a>
+                            </li>
+                            {% endif %}
+                            {% if documentos.certificacion_bancaria %}
+                            <li class="list-group-item">
+                                <i class="fas fa-file-pdf text-danger"></i>
+                                <a href="{{ documentos.certificacion_bancaria.url }}" target="_blank">Certificación Bancaria</a>
+                            </li>
+                            {% endif %}
+                            {% if documentos.fotocopia_cc_representante %}
+                            <li class="list-group-item">
+                                <i class="fas fa-file-pdf text-danger"></i>
+                                <a href="{{ documentos.fotocopia_cc_representante.url }}" target="_blank">CC Representante Legal</a>
+                            </li>
+                            {% endif %}
+                            {% if documentos.autorizacion_datos %}
+                            <li class="list-group-item">
+                                <i class="fas fa-file-pdf text-danger"></i>
+                                <a href="{{ documentos.autorizacion_datos.url }}" target="_blank">Autorización de Datos</a>
+                            </li>
+                            {% endif %}
+                        </ul>
+                    {% else %}
+                        <p class="text-muted">No hay documentos cargados</p>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Representante Legal -->
+            <div class="card mb-4">
+                <div class="card-header bg-dark text-white">
+                    <h5 class="mb-0"><i class="fas fa-signature"></i> Representante Legal</h5>
+                </div>
+                <div class="card-body">
+                    <p><strong>{{ proveedor.datos_representante_legal }}</strong></p>
+                    <div class="row">
+                        {% if proveedor.firma_representante %}
+                        <div class="col-md-6">
+                            <p class="mb-2"><strong>Firma:</strong></p>
+                            <img src="{{ proveedor.firma_representante.url }}" alt="Firma" class="img-fluid border" style="max-height: 150px;">
+                        </div>
+                        {% endif %}
+                        {% if proveedor.sello %}
+                        <div class="col-md-6">
+                            <p class="mb-2"><strong>Sello:</strong></p>
+                            <img src="{{ proveedor.sello.url }}" alt="Sello" class="img-fluid border" style="max-height: 150px;">
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .card {
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    .contact-item {
+        background-color: #f8f9fa;
+    }
+
+    .table th {
+        font-weight: 600;
+        color: #495057;
+    }
+</style>
+{% endblock %}
