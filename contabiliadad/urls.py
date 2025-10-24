@@ -22,7 +22,7 @@ from django.views.generic import RedirectView
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('proveedores/', include('contabiliadad.proveedores.urls')),
+    path('proveedores/', include('proveedores.urls')),
     # Redirigir la raíz al formulario de registro
     path('', RedirectView.as_view(url='/proveedores/registro/', permanent=False)),
 ]

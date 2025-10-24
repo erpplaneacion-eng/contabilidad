@@ -78,27 +78,34 @@ contabilidad/
 ├── contabiliadad/              # Proyecto Django principal
 │   ├── settings.py            # Configuración del proyecto
 │   ├── urls.py                # URLs principales
-│   └── proveedores/           # App de proveedores
-│       ├── models.py          # Modelos de datos
-│       ├── forms.py           # Formularios
-│       ├── views.py           # Vistas
-│       ├── admin.py           # Configuración del admin
-│       ├── urls.py            # URLs de la app
-│       └── templates/         # Templates HTML
-│           └── proveedores/
-│               ├── base.html
-│               ├── formulario_proveedor.html
-│               └── success.html
+│   ├── wsgi.py                # WSGI config
+│   └── asgi.py                # ASGI config
+├── proveedores/                # App de proveedores (al mismo nivel)
+│   ├── models.py              # Modelos de datos
+│   ├── forms.py               # Formularios
+│   ├── views.py               # Vistas
+│   ├── admin.py               # Configuración del admin
+│   ├── urls.py                # URLs de la app
+│   ├── apps.py                # Configuración de la app
+│   ├── migrations/            # Migraciones de la base de datos
+│   └── templates/             # Templates HTML
+│       └── proveedores/
+│           ├── base.html
+│           ├── formulario_proveedor.html
+│           └── success.html
 ├── static/                     # Archivos estáticos
-│   └── css/
-│       └── style.css
+│   ├── css/
+│   │   └── style.css
+│   ├── js/
+│   └── img/
 ├── media/                      # Archivos subidos
 │   ├── firmas/
 │   ├── sellos/
 │   └── documentos/
 ├── db.sqlite3                 # Base de datos
 ├── manage.py                  # Script de gestión Django
-└── requirements.txt           # Dependencias
+├── requirements.txt           # Dependencias
+└── INSTRUCCIONES.md          # Este archivo
 
 ```
 
@@ -195,7 +202,7 @@ Los archivos subidos por los proveedores se guardan en:
 Edite el archivo: `static/css/style.css`
 
 ### Modificar campos del formulario
-Edite los modelos en: `contabiliadad/proveedores/models.py`
+Edite los modelos en: `proveedores/models.py`
 Luego ejecute:
 ```bash
 python manage.py makemigrations
@@ -203,7 +210,7 @@ python manage.py migrate
 ```
 
 ### Agregar validaciones
-Edite los formularios en: `contabiliadad/proveedores/forms.py`
+Edite los formularios en: `proveedores/forms.py`
 
 ## Soporte y Mantenimiento
 
