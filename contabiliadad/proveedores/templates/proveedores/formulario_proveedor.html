@@ -1,0 +1,566 @@
+{% extends 'proveedores/base.html' %}
+{% load static %}
+
+{% block title %}
+    {% if is_update %}
+        Actualizar Proveedor - {{ proveedor.nombre_razon_social }}
+    {% else %}
+        Registro de Proveedor
+    {% endif %}
+{% endblock %}
+
+{% block content %}
+<div class="main-container">
+    <div class="form-header">
+        <h1>
+            <i class="fas fa-building"></i>
+            {% if is_update %}
+                ACTUALIZACIÓN DE DATOS DE PROVEEDOR
+            {% else %}
+                SOLICITUD DE VINCULACIÓN O ACTUALIZACIÓN DE DATOS
+            {% endif %}
+        </h1>
+        <p>Por favor complete todos los campos requeridos (*)</p>
+    </div>
+
+    <div class="form-container">
+        {% if messages %}
+            {% for message in messages %}
+                <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            {% endfor %}
+        {% endif %}
+
+        <form method="post" enctype="multipart/form-data" id="proveedorForm">
+            {% csrf_token %}
+
+            <!-- SECCIÓN 1: INFORMACIÓN GENERAL -->
+            <div class="form-section">
+                <h2 class="section-title">
+                    <i class="fas fa-info-circle"></i> Información General
+                </h2>
+
+                <div class="row">
+                    <div class="col-md-4 mb-3">
+                        <label for="{{ proveedor_form.fecha_diligenciamiento.id_for_label }}" class="form-label required-field">
+                            {{ proveedor_form.fecha_diligenciamiento.label }}
+                        </label>
+                        {{ proveedor_form.fecha_diligenciamiento }}
+                        {% if proveedor_form.fecha_diligenciamiento.errors %}
+                            <div class="text-danger">{{ proveedor_form.fecha_diligenciamiento.errors }}</div>
+                        {% endif %}
+                    </div>
+
+                    <div class="col-md-8 mb-3">
+                        <label for="{{ proveedor_form.nombre_razon_social.id_for_label }}" class="form-label required-field">
+                            {{ proveedor_form.nombre_razon_social.label }}
+                        </label>
+                        {{ proveedor_form.nombre_razon_social }}
+                        {% if proveedor_form.nombre_razon_social.errors %}
+                            <div class="text-danger">{{ proveedor_form.nombre_razon_social.errors }}</div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-4 mb-3">
+                        <label for="{{ proveedor_form.naturaleza_juridica.id_for_label }}" class="form-label required-field">
+                            {{ proveedor_form.naturaleza_juridica.label }}
+                        </label>
+                        {{ proveedor_form.naturaleza_juridica }}
+                        {% if proveedor_form.naturaleza_juridica.errors %}
+                            <div class="text-danger">{{ proveedor_form.naturaleza_juridica.errors }}</div>
+                        {% endif %}
+                    </div>
+
+                    <div class="col-md-4 mb-3">
+                        <label for="{{ proveedor_form.tipo_identificacion.id_for_label }}" class="form-label required-field">
+                            {{ proveedor_form.tipo_identificacion.label }}
+                        </label>
+                        {{ proveedor_form.tipo_identificacion }}
+                        {% if proveedor_form.tipo_identificacion.errors %}
+                            <div class="text-danger">{{ proveedor_form.tipo_identificacion.errors }}</div>
+                        {% endif %}
+                    </div>
+
+                    <div class="col-md-4 mb-3">
+                        <label for="{{ proveedor_form.numero_identificacion.id_for_label }}" class="form-label required-field">
+                            {{ proveedor_form.numero_identificacion.label }}
+                        </label>
+                        {{ proveedor_form.numero_identificacion }}
+                        {% if proveedor_form.numero_identificacion.errors %}
+                            <div class="text-danger">{{ proveedor_form.numero_identificacion.errors }}</div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-12 mb-3">
+                        <label for="{{ proveedor_form.direccion.id_for_label }}" class="form-label required-field">
+                            {{ proveedor_form.direccion.label }}
+                        </label>
+                        {{ proveedor_form.direccion }}
+                        {% if proveedor_form.direccion.errors %}
+                            <div class="text-danger">{{ proveedor_form.direccion.errors }}</div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-4 mb-3">
+                        <label for="{{ proveedor_form.telefono.id_for_label }}" class="form-label required-field">
+                            {{ proveedor_form.telefono.label }}
+                        </label>
+                        {{ proveedor_form.telefono }}
+                        {% if proveedor_form.telefono.errors %}
+                            <div class="text-danger">{{ proveedor_form.telefono.errors }}</div>
+                        {% endif %}
+                    </div>
+
+                    <div class="col-md-4 mb-3">
+                        <label for="{{ proveedor_form.celular.id_for_label }}" class="form-label required-field">
+                            {{ proveedor_form.celular.label }}
+                        </label>
+                        {{ proveedor_form.celular }}
+                        {% if proveedor_form.celular.errors %}
+                            <div class="text-danger">{{ proveedor_form.celular.errors }}</div>
+                        {% endif %}
+                    </div>
+
+                    <div class="col-md-4 mb-3">
+                        <label for="{{ proveedor_form.pais.id_for_label }}" class="form-label required-field">
+                            {{ proveedor_form.pais.label }}
+                        </label>
+                        {{ proveedor_form.pais }}
+                        {% if proveedor_form.pais.errors %}
+                            <div class="text-danger">{{ proveedor_form.pais.errors }}</div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label for="{{ proveedor_form.departamento.id_for_label }}" class="form-label required-field">
+                            {{ proveedor_form.departamento.label }}
+                        </label>
+                        {{ proveedor_form.departamento }}
+                        {% if proveedor_form.departamento.errors %}
+                            <div class="text-danger">{{ proveedor_form.departamento.errors }}</div>
+                        {% endif %}
+                    </div>
+
+                    <div class="col-md-6 mb-3">
+                        <label for="{{ proveedor_form.ciudad.id_for_label }}" class="form-label required-field">
+                            {{ proveedor_form.ciudad.label }}
+                        </label>
+                        {{ proveedor_form.ciudad }}
+                        {% if proveedor_form.ciudad.errors %}
+                            <div class="text-danger">{{ proveedor_form.ciudad.errors }}</div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- SECCIÓN 2: OTROS CONTACTOS -->
+            <div class="form-section">
+                <h2 class="section-title">
+                    <i class="fas fa-address-book"></i> Otros Contactos
+                </h2>
+                <p class="form-text mb-3">Puede agregar hasta 5 contactos adicionales</p>
+
+                <div id="contactos-container">
+                    {{ contacto_formset.management_form }}
+                    {% for form in contacto_formset %}
+                        <div class="contact-group">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <h5 class="mb-0">Contacto {{ forloop.counter }}</h5>
+                                {% if not forloop.first %}
+                                    <button type="button" class="remove-btn remove-contact">
+                                        <i class="fas fa-trash"></i> Eliminar
+                                    </button>
+                                {% endif %}
+                            </div>
+
+                            {{ form.id }}
+                            {% if form.DELETE %}
+                                {{ form.DELETE }}
+                            {% endif %}
+
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">{{ form.nombre_apellidos.label }}</label>
+                                    {{ form.nombre_apellidos }}
+                                    {% if form.nombre_apellidos.errors %}
+                                        <div class="text-danger">{{ form.nombre_apellidos.errors }}</div>
+                                    {% endif %}
+                                </div>
+
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">{{ form.cargo.label }}</label>
+                                    {{ form.cargo }}
+                                    {% if form.cargo.errors %}
+                                        <div class="text-danger">{{ form.cargo.errors }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">{{ form.direccion.label }}</label>
+                                    {{ form.direccion }}
+                                    {% if form.direccion.errors %}
+                                        <div class="text-danger">{{ form.direccion.errors }}</div>
+                                    {% endif %}
+                                </div>
+
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">{{ form.ciudad.label }}</label>
+                                    {{ form.ciudad }}
+                                    {% if form.ciudad.errors %}
+                                        <div class="text-danger">{{ form.ciudad.errors }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+
+                            <div class="row">
+                                <div class="col-md-4 mb-3">
+                                    <label class="form-label">{{ form.correo_electronico.label }}</label>
+                                    {{ form.correo_electronico }}
+                                    {% if form.correo_electronico.errors %}
+                                        <div class="text-danger">{{ form.correo_electronico.errors }}</div>
+                                    {% endif %}
+                                </div>
+
+                                <div class="col-md-4 mb-3">
+                                    <label class="form-label">{{ form.telefono.label }}</label>
+                                    {{ form.telefono }}
+                                    {% if form.telefono.errors %}
+                                        <div class="text-danger">{{ form.telefono.errors }}</div>
+                                    {% endif %}
+                                </div>
+
+                                <div class="col-md-4 mb-3">
+                                    <label class="form-label">{{ form.celular.label }}</label>
+                                    {{ form.celular }}
+                                    {% if form.celular.errors %}
+                                        <div class="text-danger">{{ form.celular.errors }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- SECCIÓN 3: IMPUESTOS -->
+            <div class="form-section">
+                <h2 class="section-title">
+                    <i class="fas fa-receipt"></i> Impuestos de Industria y Comercio / Retención en la Fuente
+                </h2>
+
+                <div id="impuestos-container">
+                    {{ impuesto_formset.management_form }}
+                    {% for form in impuesto_formset %}
+                        <div class="impuesto-group">
+                            <h5 class="mb-3">Impuesto {{ forloop.counter }}</h5>
+
+                            {{ form.id }}
+                            {% if form.DELETE %}
+                                {{ form.DELETE }}
+                            {% endif %}
+
+                            <div class="row">
+                                <div class="col-md-4 mb-3">
+                                    <label class="form-label">{{ form.tipo_impuesto.label }}</label>
+                                    {{ form.tipo_impuesto }}
+                                    {% if form.tipo_impuesto.errors %}
+                                        <div class="text-danger">{{ form.tipo_impuesto.errors }}</div>
+                                    {% endif %}
+                                </div>
+
+                                <div class="col-md-2 mb-3">
+                                    <label class="form-label">{{ form.aplica.label }}</label>
+                                    <div class="form-check">
+                                        {{ form.aplica }}
+                                    </div>
+                                    {% if form.aplica.errors %}
+                                        <div class="text-danger">{{ form.aplica.errors }}</div>
+                                    {% endif %}
+                                </div>
+
+                                <div class="col-md-3 mb-3">
+                                    <label class="form-label">{{ form.porcentaje.label }}</label>
+                                    {{ form.porcentaje }}
+                                    {% if form.porcentaje.errors %}
+                                        <div class="text-danger">{{ form.porcentaje.errors }}</div>
+                                    {% endif %}
+                                </div>
+
+                                <div class="col-md-3 mb-3">
+                                    <label class="form-label">{{ form.tarifa.label }}</label>
+                                    {{ form.tarifa }}
+                                    {% if form.tarifa.errors %}
+                                        <div class="text-danger">{{ form.tarifa.errors }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+
+                            <div class="row">
+                                <div class="col-md-4 mb-3">
+                                    <label class="form-label">{{ form.codigo_actividad_economica.label }}</label>
+                                    {{ form.codigo_actividad_economica }}
+                                    {% if form.codigo_actividad_economica.errors %}
+                                        <div class="text-danger">{{ form.codigo_actividad_economica.errors }}</div>
+                                    {% endif %}
+                                </div>
+
+                                <div class="col-md-4 mb-3">
+                                    <label class="form-label">{{ form.municipio.label }}</label>
+                                    {{ form.municipio }}
+                                    {% if form.municipio.errors %}
+                                        <div class="text-danger">{{ form.municipio.errors }}</div>
+                                    {% endif %}
+                                </div>
+
+                                <div class="col-md-4 mb-3">
+                                    <label class="form-label">{{ form.resolucion_exento.label }}</label>
+                                    {{ form.resolucion_exento }}
+                                    {% if form.resolucion_exento.errors %}
+                                        <div class="text-danger">{{ form.resolucion_exento.errors }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+
+                            <div class="row">
+                                <div class="col-md-12 mb-3">
+                                    <label class="form-label">{{ form.otro_concepto.label }}</label>
+                                    {{ form.otro_concepto }}
+                                    {% if form.otro_concepto.errors %}
+                                        <div class="text-danger">{{ form.otro_concepto.errors }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- SECCIÓN 4: CONDICIONES DE PAGO -->
+            <div class="form-section">
+                <h2 class="section-title">
+                    <i class="fas fa-credit-card"></i> Condiciones de Pago
+                </h2>
+
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label for="{{ proveedor_form.condicion_pago.id_for_label }}" class="form-label required-field">
+                            {{ proveedor_form.condicion_pago.label }}
+                        </label>
+                        {{ proveedor_form.condicion_pago }}
+                        {% if proveedor_form.condicion_pago.errors %}
+                            <div class="text-danger">{{ proveedor_form.condicion_pago.errors }}</div>
+                        {% endif %}
+                    </div>
+
+                    <div class="col-md-6 mb-3">
+                        <label for="{{ proveedor_form.condicion_pago_otro.id_for_label }}" class="form-label">
+                            {{ proveedor_form.condicion_pago_otro.label }}
+                        </label>
+                        {{ proveedor_form.condicion_pago_otro }}
+                        <small class="form-text">Solo si seleccionó "Otro" en la condición de pago</small>
+                        {% if proveedor_form.condicion_pago_otro.errors %}
+                            <div class="text-danger">{{ proveedor_form.condicion_pago_otro.errors }}</div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- SECCIÓN 5: DOCUMENTOS REQUERIDOS -->
+            <div class="form-section">
+                <h2 class="section-title">
+                    <i class="fas fa-file-upload"></i> Documentos Requeridos
+                </h2>
+                <p class="form-text mb-3">Formatos aceptados: PDF, JPG, PNG (Máximo 10MB por archivo)</p>
+
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label for="{{ documento_form.fotocopia_rut.id_for_label }}" class="form-label">
+                            {{ documento_form.fotocopia_rut.label }}
+                        </label>
+                        {{ documento_form.fotocopia_rut }}
+                        {% if documento_form.fotocopia_rut.errors %}
+                            <div class="text-danger">{{ documento_form.fotocopia_rut.errors }}</div>
+                        {% endif %}
+                    </div>
+
+                    <div class="col-md-6 mb-3">
+                        <label for="{{ documento_form.solicitud_vinculacion.id_for_label }}" class="form-label">
+                            {{ documento_form.solicitud_vinculacion.label }}
+                        </label>
+                        {{ documento_form.solicitud_vinculacion }}
+                        {% if documento_form.solicitud_vinculacion.errors %}
+                            <div class="text-danger">{{ documento_form.solicitud_vinculacion.errors }}</div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label for="{{ documento_form.certificado_camara_comercio.id_for_label }}" class="form-label">
+                            {{ documento_form.certificado_camara_comercio.label }}
+                        </label>
+                        {{ documento_form.certificado_camara_comercio }}
+                        {% if documento_form.certificado_camara_comercio.errors %}
+                            <div class="text-danger">{{ documento_form.certificado_camara_comercio.errors }}</div>
+                        {% endif %}
+                    </div>
+
+                    <div class="col-md-6 mb-3">
+                        <label for="{{ documento_form.certificacion_bancaria.id_for_label }}" class="form-label">
+                            {{ documento_form.certificacion_bancaria.label }}
+                        </label>
+                        {{ documento_form.certificacion_bancaria }}
+                        {% if documento_form.certificacion_bancaria.errors %}
+                            <div class="text-danger">{{ documento_form.certificacion_bancaria.errors }}</div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label for="{{ documento_form.fotocopia_cc_representante.id_for_label }}" class="form-label">
+                            {{ documento_form.fotocopia_cc_representante.label }}
+                        </label>
+                        {{ documento_form.fotocopia_cc_representante }}
+                        {% if documento_form.fotocopia_cc_representante.errors %}
+                            <div class="text-danger">{{ documento_form.fotocopia_cc_representante.errors }}</div>
+                        {% endif %}
+                    </div>
+
+                    <div class="col-md-6 mb-3">
+                        <label for="{{ documento_form.autorizacion_datos.id_for_label }}" class="form-label">
+                            {{ documento_form.autorizacion_datos.label }}
+                        </label>
+                        {{ documento_form.autorizacion_datos }}
+                        {% if documento_form.autorizacion_datos.errors %}
+                            <div class="text-danger">{{ documento_form.autorizacion_datos.errors }}</div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- SECCIÓN 6: FIRMA Y REPRESENTANTE LEGAL -->
+            <div class="form-section">
+                <h2 class="section-title">
+                    <i class="fas fa-signature"></i> Firma y Representante Legal
+                </h2>
+
+                <div class="row">
+                    <div class="col-md-12 mb-3">
+                        <label for="{{ proveedor_form.datos_representante_legal.id_for_label }}" class="form-label required-field">
+                            {{ proveedor_form.datos_representante_legal.label }}
+                        </label>
+                        {{ proveedor_form.datos_representante_legal }}
+                        {% if proveedor_form.datos_representante_legal.errors %}
+                            <div class="text-danger">{{ proveedor_form.datos_representante_legal.errors }}</div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label for="{{ proveedor_form.firma_representante.id_for_label }}" class="form-label">
+                            {{ proveedor_form.firma_representante.label }}
+                        </label>
+                        {{ proveedor_form.firma_representante }}
+                        <small class="form-text">Formato de imagen (PNG, JPG)</small>
+                        {% if proveedor_form.firma_representante.errors %}
+                            <div class="text-danger">{{ proveedor_form.firma_representante.errors }}</div>
+                        {% endif %}
+                    </div>
+
+                    <div class="col-md-6 mb-3">
+                        <label for="{{ proveedor_form.sello.id_for_label }}" class="form-label">
+                            {{ proveedor_form.sello.label }}
+                        </label>
+                        {{ proveedor_form.sello }}
+                        <small class="form-text">Formato de imagen (PNG, JPG)</small>
+                        {% if proveedor_form.sello.errors %}
+                            <div class="text-danger">{{ proveedor_form.sello.errors }}</div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- BOTONES DE ACCIÓN -->
+            <div class="text-center mt-4">
+                <button type="submit" class="btn btn-primary btn-lg">
+                    <i class="fas fa-save"></i>
+                    {% if is_update %}
+                        Actualizar Datos
+                    {% else %}
+                        Registrar Proveedor
+                    {% endif %}
+                </button>
+                <button type="reset" class="btn btn-secondary btn-lg ms-3">
+                    <i class="fas fa-undo"></i> Limpiar Formulario
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Script para manejar los formsets dinámicos
+    $(document).ready(function() {
+        // Manejar eliminación de contactos
+        $('.remove-contact').on('click', function() {
+            var contactGroup = $(this).closest('.contact-group');
+            var deleteCheckbox = contactGroup.find('input[name$="-DELETE"]');
+            if (deleteCheckbox.length) {
+                deleteCheckbox.prop('checked', true);
+                contactGroup.hide();
+            } else {
+                contactGroup.remove();
+            }
+        });
+
+        // Validar formulario antes de enviar
+        $('#proveedorForm').on('submit', function(e) {
+            var requiredFields = $(this).find('input[required], select[required]');
+            var valid = true;
+
+            requiredFields.each(function() {
+                if (!$(this).val()) {
+                    valid = false;
+                    $(this).addClass('is-invalid');
+                } else {
+                    $(this).removeClass('is-invalid');
+                }
+            });
+
+            if (!valid) {
+                e.preventDefault();
+                alert('Por favor complete todos los campos requeridos');
+                return false;
+            }
+        });
+
+        // Mostrar/ocultar campo de "Otra condición de pago"
+        $('#id_condicion_pago').on('change', function() {
+            if ($(this).val() === 'OTRO') {
+                $('#id_condicion_pago_otro').closest('.col-md-6').show();
+            } else {
+                $('#id_condicion_pago_otro').closest('.col-md-6').hide();
+            }
+        });
+
+        // Trigger inicial para "Otra condición de pago"
+        $('#id_condicion_pago').trigger('change');
+    });
+</script>
+{% endblock %}

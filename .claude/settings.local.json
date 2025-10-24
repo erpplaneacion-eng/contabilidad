@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(source venv/bin/activate)",
+      "Bash(python manage.py makemigrations:*)",
+      "Bash(venv/Scripts/python.exe manage.py makemigrations:*)",
+      "Bash(venv/Scripts/python.exe:*)",
+      "Bash(tree:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}
