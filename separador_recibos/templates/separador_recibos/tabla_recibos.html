@@ -234,7 +234,7 @@
                                 {% endif %}
                             </td>
                             <td>
-                                <span class="badge bg-success">{{ recibo.estado_pago|default:"N/A" }}</span>
+                                <span class="badge bg-success">{{ recibo.estado_pago|truncatewords:2|default:"N/A" }}</span>
                             </td>
                             <td>
                                 {% if recibo.validado %}

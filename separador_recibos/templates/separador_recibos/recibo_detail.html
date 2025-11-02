@@ -168,7 +168,7 @@
                                     <strong>Estado:</strong>
                                 </div>
                                 <div class="col-sm-8">
-                                    <span class="badge bg-success">{{ recibo.estado_pago|default:"N/A" }}</span>
+                                    <span class="badge bg-success">{{ recibo.estado_pago|truncatewords:2|default:"N/A" }}</span>
                                 </div>
                             </div>
                             
