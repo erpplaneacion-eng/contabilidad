@@ -419,6 +419,9 @@ def ver_recibo(request, recibo_id):
     return render(request, 'separador_recibos/recibo_detail.html', context)
 
 
+
+
+
 @login_required
 def descargar_imagen(request, recibo_id):
     """Vista para descargar imagen de un recibo"""
