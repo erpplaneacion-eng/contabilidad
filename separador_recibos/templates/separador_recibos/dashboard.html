@@ -89,7 +89,7 @@
                     <h5 class="mb-0">
                         <i class="fas fa-history"></i> Procesamientos Recientes
                     </h5>
-                    <a href="{% url 'upload_pdf' %}" class="btn btn-primary btn-sm">
+                    <a href="{% url 'separador_recibos:upload_pdf' %}" class="btn btn-primary btn-sm">
                         <i class="fas fa-plus"></i> Nuevo Procesamiento
                     </a>
                 </div>
@@ -136,12 +136,12 @@
                                         {% endif %}
                                     </td>
                                     <td>
-                                        <a href="{% url 'process_status' proc.id %}" 
+                                        <a href="{% url 'separador_recibos:process_status' proc.id %}"
                                            class="btn btn-sm btn-outline-primary">
                                             <i class="fas fa-eye"></i>
                                         </a>
                                         {% if proc.archivo_resultado %}
-                                        <a href="{% url 'download_result' proc.id %}" 
+                                        <a href="{% url 'separador_recibos:download_result' proc.id %}"
                                            class="btn btn-sm btn-outline-success">
                                             <i class="fas fa-download"></i>
                                         </a>
@@ -156,7 +156,7 @@
                     <div class="text-center py-5">
                         <i class="fas fa-file-pdf fa-3x text-muted mb-3"></i>
                         <p class="text-muted">No hay procesamientos recientes</p>
-                        <a href="{% url 'upload_pdf' %}" class="btn btn-primary">
+                        <a href="{% url 'separador_recibos:upload_pdf' %}" class="btn btn-primary">
                             <i class="fas fa-upload"></i> Subir tu primer PDF
                         </a>
                     </div>
@@ -213,13 +213,13 @@
                 </div>
                 <div class="card-body">
                     <div class="d-grid gap-2">
-                        <a href="{% url 'upload_pdf' %}" class="btn btn-primary">
+                        <a href="{% url 'separador_recibos:upload_pdf' %}" class="btn btn-primary">
                             <i class="fas fa-upload"></i> Subir PDF
                         </a>
-                        <a href="{% url 'tabla_recibos' %}" class="btn btn-outline-info">
+                        <a href="{% url 'separador_recibos:tabla_recibos' %}" class="btn btn-outline-info">
                             <i class="fas fa-table"></i> Ver Tabla de Recibos
                         </a>
-                        <a href="{% url 'exportar_recibos' %}" class="btn btn-outline-success">
+                        <a href="{% url 'separador_recibos:exportar_recibos' %}" class="btn btn-outline-success">
                             <i class="fas fa-file-export"></i> Exportar a CSV
                         </a>
                     </div>
@@ -228,7 +228,9 @@
         </div>
     </div>
 </div>
+{% endblock %}
 
+{% block extra_js %}
 <script>
 // Auto-refresh para procesamientos en curso
 $(document).ready(function() {
@@ -236,7 +238,7 @@ $(document).ready(function() {
         $('.badge.bg-warning').each(function() {
             const $badge = $(this);
             const processingId = $badge.closest('tr').find('a[href*="/procesando/"]').attr('href');
-            
+
             if (processingId) {
                 $.get(processingId)
                  .done(function(data) {
@@ -248,7 +250,7 @@ $(document).ready(function() {
             }
         });
     }
-    
+
     // Check every 30 seconds
     setInterval(checkProcessingStatus, 30000);
 });

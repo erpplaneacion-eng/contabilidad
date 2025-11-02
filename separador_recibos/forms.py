@@ -1,6 +1,6 @@
 from django import forms
 from django.core.validators import FileExtensionValidator
-from .models import ProcesamientoRecibo
+from .models import ProcesamientoRecibo, ReciboDetectado
 
 
 class PDFUploadForm(forms.ModelForm):
@@ -150,9 +150,9 @@ class FiltrosRecibosForm(forms.Form):
 
 class EditarReciboForm(forms.ModelForm):
     """Formulario para editar información de un recibo detectado"""
-    
+
     class Meta:
-        model = ProcesamientoRecibo._meta.get_field('nombre_beneficiario').related_model
+        model = ReciboDetectado
         fields = [
             'nombre_beneficiario', 'valor', 'entidad_bancaria', 
             'numero_cuenta', 'referencia', 'fecha_aplicacion',

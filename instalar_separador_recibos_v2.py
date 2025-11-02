@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 """
-Script de instalación automática para Separador de Recibos PDF
+Script de instalación automática para Separador de Recibos PDF - V2
 Sistema de Contabilidad CHVS
 
-Este script automatiza la instalación y configuración inicial de la aplicación
-de separación de recibos PDF.
+Versión optimizada que detecta si las dependencias ya están instaladas
+y continúa desde donde se quedó.
 """
 
 import os
@@ -37,6 +37,29 @@ def check_python_version():
     print(f"✅ Python {sys.version.split()[0]} - Compatible")
     return True
 
+def check_and_install_dependencies():
+    """Verifica e instala dependencias si no están instaladas"""
+    print("\n📦 Verificando dependencias instaladas...")
+    
+    required_packages = ['django', 'PyPDF2', 'pdfplumber', 'reportlab', 'PyMuPDF']
+    missing_packages = []
+    
+    for package in required_packages:
+        try:
+            __import__(package.lower().replace('pypdf2', 'PyPDF2').replace('pymupdf', 'fitz'))
+            print(f"✅ {package} ya está instalado")
+        except ImportError:
+            print(f"❌ {package} no encontrado")
+            missing_packages.append(package)
+    
+    if missing_packages:
+        print(f"\n📦 Instalando paquetes faltantes: {', '.join(missing_packages)}")
+        install_dependencies()
+    else:
+        print("✅ Todas las dependencias ya están instaladas")
+    
+    return True
+
 def install_dependencies():
     """Instala dependencias de Python"""
     print("\n📦 Instalando dependencias de Python...")
@@ -51,7 +74,7 @@ def install_dependencies():
         "django-storages==1.14.2",
         "celery==5.3.4",
         "redis==5.0.1",
-        "PyMuPDF==1.23.14",
+        "PyMuPDF>=1.24.0",
         "pdf2image==1.17.0",
         "matplotlib==3.7.2",
         "Wand==0.6.13",
@@ -83,41 +106,72 @@ def create_directories():
     
     return True
 
+def verify_settings_config():
+    """Verifica que settings.py tenga la configuración correcta"""
+    print("\n⚙️ Verificando configuración de settings.py...")
+    
+    settings_path = "contabiliadad/settings.py"
+    if not os.path.exists(settings_path):
+        print("❌ No se encontró settings.py")
+        return False
+    
+    with open(settings_path, 'r', encoding='utf-8') as f:
+        settings_content = f.read()
+    
+    if 'separador_recibos' in settings_content and "INSTALLED_APPS" in settings_content:
+        print("✅ settings.py ya tiene la configuración correcta")
+        return True
+    else:
+        print("❌ settings.py no tiene la configuración correcta")
+        print("💡 Ejecuta manualmente: python manage.py makemigrations separador_recibos")
+        return False
+
 def setup_django():
     """Configura Django y la base de datos"""
     print("\n⚙️ Configurando Django...")
     
-    # Configurar Django
-    os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'contabiliadad.settings')
-    django.setup()
-    
-    # Ejecutar migraciones
-    print("📊 Ejecutando migraciones...")
-    execute_from_command_line(['manage.py', 'makemigrations'])
-    execute_from_command_line(['manage.py', 'migrate'])
-    
-    print("✅ Base de datos configurada")
-    return True
+    try:
+        # Configurar Django
+        os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'contabiliadad.settings')
+        django.setup()
+        
+        # Ejecutar migraciones
+        print("📊 Ejecutando makemigrations...")
+        try:
+            execute_from_command_line(['manage.py', 'makemigrations', 'separador_recibos'])
+        except Exception as e:
+            print(f"⚠️  makemigrations falló: {e}")
+            print("💡 Intentando makemigrations general...")
+            execute_from_command_line(['manage.py', 'makemigrations'])
+        
+        print("📊 Ejecutando migrate...")
+        execute_from_command_line(['manage.py', 'migrate'])
+        
+        print("✅ Base de datos configurada")
+        return True
+        
+    except Exception as e:
+        print(f"❌ Error configurando Django: {e}")
+        return False
 
 def create_superuser():
     """Crea superusuario para Django Admin"""
     print("\n👤 Configurando superusuario...")
     
-    from django.contrib.auth.models import User
-    from django.db import connection
-    
-    # Verificar si ya existe un superusuario
-    if User.objects.filter(is_superuser=True).exists():
-        print("✅ Superusuario ya existe")
-        return True
-    
-    # Crear superusuario por defecto
-    print("📝 Creando superusuario por defecto...")
-    print("   Usuario: admin")
-    print("   Email: admin@contabilidad.com")
-    print("   Contraseña: admin123")
-    
     try:
+        from django.contrib.auth.models import User
+        
+        # Verificar si ya existe un superusuario
+        if User.objects.filter(is_superuser=True).exists():
+            print("✅ Superusuario ya existe")
+            return True
+        
+        # Crear superusuario por defecto
+        print("📝 Creando superusuario por defecto...")
+        print("   Usuario: admin")
+        print("   Email: admin@contabilidad.com")
+        print("   Contraseña: admin123")
+        
         User.objects.create_superuser(
             username='admin',
             email='admin@contabilidad.com', 
@@ -125,6 +179,7 @@ def create_superuser():
         )
         print("✅ Superusuario creado")
         return True
+        
     except Exception as e:
         print(f"❌ Error creando superusuario: {e}")
         print("⚠️  Puedes crear uno manualmente con: python manage.py createsuperuser")
@@ -140,18 +195,31 @@ def verify_installation():
         print(f"✅ Django {django.get_version()}")
         
         # Verificar dependencias
-        import PyPDF2
-        print(f"✅ PyPDF2 {PyPDF2.__version__}")
+        try:
+            import PyPDF2
+            print(f"✅ PyPDF2 {PyPDF2.__version__}")
+        except:
+            print("⚠️  PyPDF2 no disponible")
         
-        import pdfplumber
-        print(f"✅ pdfplumber {pdfplumber.__version__}")
+        try:
+            import pdfplumber
+            print(f"✅ pdfplumber {pdfplumber.__version__}")
+        except:
+            print("⚠️  pdfplumber no disponible")
         
-        import reportlab
-        print(f"✅ reportlab {reportlab.Version}")
+        try:
+            import reportlab
+            print(f"✅ reportlab {reportlab.Version}")
+        except:
+            print("⚠️  reportlab no disponible")
         
         # Verificar que la app existe
-        from separador_recibos import models
-        print("✅ Aplicación separador_recibos importada correctamente")
+        try:
+            from separador_recibos import models
+            print("✅ Aplicación separador_recibos importada correctamente")
+        except Exception as e:
+            print(f"❌ Error importando aplicación: {e}")
+            return False
         
         print("✅ Verificación completada")
         return True
@@ -182,20 +250,6 @@ def print_success_message():
     print("   3. (Opcional) Iniciar Redis para Celery:")
     print("      redis-server")
     
-    print("\n📚 DOCUMENTACIÓN:")
-    print("   📖 README completo: separador_recibos/README.md")
-    print("   🏗️ Arquitectura: ARQUITECTURA_RECIBOS_PDF.md")
-    
-    print("\n🔍 FUNCIONALIDADES PRINCIPALES:")
-    print("   ✅ Detección automática de recibos")
-    print("   ✅ Extracción de imágenes de alta calidad")
-    print("   ✅ Generación de PDF separado por recibo")
-    print("   ✅ Tabla completa para seguimiento")
-    print("   ✅ Dashboard con estadísticas")
-    print("   ✅ Filtros avanzados de búsqueda")
-    print("   ✅ Validación manual de datos")
-    print("   ✅ Exportación a CSV")
-    
     print("\n🎯 PARA PROBAR LA APLICACIÓN:")
     print("   1. Ve a http://localhost:8000/separador/")
     print("   2. Inicia sesión con admin/admin123")
@@ -207,10 +261,11 @@ def print_success_message():
 
 def main():
     """Función principal de instalación"""
-    print("🚀 INSTALADOR AUTOMÁTICO - SEPARADOR DE RECIBOS PDF")
+    print("🚀 INSTALADOR AUTOMÁTICO V2 - SEPARADOR DE RECIBOS PDF")
     print("="*60)
     print("Sistema de Contabilidad CHVS")
     print("="*60)
+    print("✨ Versión optimizada - Detecta instalaciones previas")
     
     # Verificar Python
     if not check_python_version():
@@ -221,14 +276,20 @@ def main():
         print("❌ Error creando directorios")
         sys.exit(1)
     
-    # Instalar dependencias
-    if not install_dependencies():
-        print("❌ Error instalando dependencias")
+    # Verificar e instalar dependencias si es necesario
+    if not check_and_install_dependencies():
+        print("❌ Error en verificación/instalación de dependencias")
+        sys.exit(1)
+    
+    # Verificar configuración settings.py
+    if not verify_settings_config():
+        print("❌ Error en configuración de settings.py")
         sys.exit(1)
     
     # Configurar Django
     if not setup_django():
         print("❌ Error configurando Django")
+        print("💡 Intenta ejecutar manualmente: python manage.py makemigrations separador_recibos")
         sys.exit(1)
     
     # Crear superusuario
@@ -251,4 +312,5 @@ if __name__ == "__main__":
     except Exception as e:
         print(f"\n\n❌ Error inesperado: {e}")
         print("💡 Por favor, revisa los requisitos e intenta de nuevo")
+        print("📖 Consulta: INSTRUCCIONES_INSTALACION_COMPLETAS.md")
         sys.exit(1)

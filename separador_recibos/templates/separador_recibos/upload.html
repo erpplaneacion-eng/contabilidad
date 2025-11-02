@@ -119,7 +119,7 @@
                         </div>
                         
                         <div class="d-grid gap-2 d-md-flex justify-content-md-end">
-                            <a href="{% url 'dashboard' %}" class="btn btn-outline-secondary me-md-2">
+                            <a href="{% url 'separador_recibos:dashboard' %}" class="btn btn-outline-secondary me-md-2">
                                 <i class="fas fa-arrow-left"></i> Cancelar
                             </a>
                             <button type="submit" class="btn btn-primary" id="submitBtn">
@@ -155,6 +155,19 @@
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<style>
+.file-upload-wrapper:hover .border {
+    background-color: #f8f9fa;
+}
+
+.spinner-border-sm {
+    width: 1rem;
+    height: 1rem;
+}
+</style>
 
 <script>
 $(document).ready(function() {
@@ -168,42 +181,42 @@ $(document).ready(function() {
                 $(this).val('');
                 return;
             }
-            
+
             // Validar tamaño (50MB)
             if (file.size > 50 * 1024 * 1024) {
                 alert('El archivo es demasiado grande. Máximo 50MB.');
                 $(this).val('');
                 return;
             }
-            
+
             // Mostrar preview
             const fileName = file.name;
             const fileSize = (file.size / (1024 * 1024)).toFixed(2) + ' MB';
-            
+
             $('#fileName').text(fileName);
             $('#fileSize').text(fileSize);
             $('#filePreview').show();
             $('#fileUploadArea').hide();
         }
     });
-    
+
     // Manejo de drag and drop
     const fileUploadWrapper = $('.border');
-    
+
     fileUploadWrapper.on('dragover', function(e) {
         e.preventDefault();
         $(this).addClass('border-primary');
     });
-    
+
     fileUploadWrapper.on('dragleave', function(e) {
         e.preventDefault();
         $(this).removeClass('border-primary');
     });
-    
+
     fileUploadWrapper.on('drop', function(e) {
         e.preventDefault();
         $(this).removeClass('border-primary');
-        
+
         const files = e.originalEvent.dataTransfer.files;
         if (files.length > 0) {
             const file = files[0];
@@ -211,12 +224,12 @@ $(document).ready(function() {
             const dt = new DataTransfer();
             dt.items.add(file);
             input.files = dt.files;
-            
+
             // Trigger change event
             input.dispatchEvent(new Event('change'));
         }
     });
-    
+
     // Manejo del formulario
     $('#uploadForm').submit(function(e) {
         const fileInput = $('#id_archivo_original')[0];
@@ -225,7 +238,7 @@ $(document).ready(function() {
             e.preventDefault();
             return;
         }
-        
+
         // Mostrar loading
         $('#submitBtn').prop('disabled', true);
         $('#submitText').text('Procesando...');
@@ -233,15 +246,4 @@ $(document).ready(function() {
     });
 });
 </script>
-
-<style>
-.file-upload-wrapper:hover .border {
-    background-color: #f8f9fa;
-}
-
-.spinner-border-sm {
-    width: 1rem;
-    height: 1rem;
-}
-</style>
 {% endblock %}

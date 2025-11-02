@@ -19,9 +19,12 @@ parts/
 sdist/
 var/
 wheels/
+pip-wheel-metadata/
+share/python-wheels/
 *.egg-info/
 .installed.cfg
 *.egg
+MANIFEST
 
 # Django
 *.log
@@ -30,6 +33,7 @@ db.sqlite3-journal
 /media/
 /staticfiles/
 *.pot
+local_settings.py
 
 # IDEs
 .vscode/
@@ -37,14 +41,19 @@ db.sqlite3-journal
 *.swp
 *.swo
 *~
+.project
+.pydevproject
+.settings/
 
 # OS
 .DS_Store
 Thumbs.db
+*.lnk
 
 # Environment variables
 .env
 .env.local
+.env.*.local
 
 # Temporary files
 *.bak
@@ -57,11 +66,34 @@ htmlcov/
 .coverage.*
 coverage.xml
 *.cover
+.hypothesis/
 
 # Pytest
 .pytest_cache/
+.tox/
 
 # mypy
 .mypy_cache/
-.dmypy.json
+.dmyp.json
 dmypy.json
+
+# Celery
+celerybeat-schedule
+celerybeat.pid
+
+# Logs y archivos de procesamiento
+logs/
+*.log
+
+# Archivos de respaldo
+*.backup
+*.old
+
+# Node.js (si usas npm/webpack)
+node_modules/
+npm-debug.log
+yarn-error.log
+
+# Archivos de configuración local
+local_config.py
+settings_local.py

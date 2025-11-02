@@ -75,17 +75,17 @@
                     <!-- Botones de acción -->
                     <div class="d-flex justify-content-between">
                         <div>
-                            <a href="{% url 'dashboard' %}" class="btn btn-outline-secondary">
+                            <a href="{% url 'separador_recibos:dashboard' %}" class="btn btn-outline-secondary">
                                 <i class="fas fa-arrow-left"></i> Volver al Dashboard
                             </a>
                         </div>
                         <div>
                             {% if procesamiento.estado == 'COMPLETADO' and procesamiento.archivo_resultado %}
-                                <a href="{% url 'download_result' procesamiento.id %}" 
+                                <a href="{% url 'separador_recibos:download_result' procesamiento.id %}"
                                    class="btn btn-success">
                                     <i class="fas fa-download"></i> Descargar PDF
                                 </a>
-                                <a href="{% url 'results' procesamiento.id %}" 
+                                <a href="{% url 'separador_recibos:results' procesamiento.id %}"
                                    class="btn btn-primary">
                                     <i class="fas fa-eye"></i> Ver Resultados
                                 </a>
@@ -94,7 +94,7 @@
                                     <i class="fas fa-spinner fa-spin"></i> Procesando...
                                 </button>
                             {% elif procesamiento.estado == 'ERROR' %}
-                                <a href="{% url 'upload_pdf' %}" class="btn btn-warning">
+                                <a href="{% url 'separador_recibos:upload_pdf' %}" class="btn btn-warning">
                                     <i class="fas fa-redo"></i> Intentar de Nuevo
                                 </a>
                             {% endif %}
@@ -142,7 +142,7 @@
                                     </p>
                                 </div>
                                 <div class="card-footer p-2">
-                                    <a href="{% url 'ver_recibo' recibo.id %}" 
+                                    <a href="{% url 'separador_recibos:ver_recibo' recibo.id %}"
                                        class="btn btn-sm btn-outline-primary w-100">
                                         <i class="fas fa-eye"></i> Ver Detalles
                                     </a>
@@ -154,7 +154,7 @@
                     
                     {% if recibos|length > 6 %}
                     <div class="text-center mt-3">
-                        <a href="{% url 'results' procesamiento.id %}" class="btn btn-primary">
+                        <a href="{% url 'separador_recibos:results' procesamiento.id %}" class="btn btn-primary">
                             <i class="fas fa-th"></i> Ver Todos ({{ recibos|length }})
                         </a>
                     </div>
@@ -195,25 +195,27 @@
         </div>
     </div>
 </div>
+{% endblock %}
 
+{% block extra_js %}
 <script>
 $(document).ready(function() {
     const status = "{{ procesamiento.estado }}";
     let progressPercent = 0;
-    
+
     // Configurar progreso inicial
     updateProgress();
-    
+
     // Auto-refresh si está procesando
     if (status === 'PROCESANDO') {
         setInterval(checkStatus, 5000); // Actualizar cada 5 segundos
     }
-    
+
     function updateProgress() {
         let percent = 0;
         let text = '';
         let iconClass = 'fas fa-cog fa-spin';
-        
+
         switch(status) {
             case 'PENDIENTE':
                 percent = 10;
@@ -234,13 +236,13 @@ $(document).ready(function() {
                 iconClass = 'fas fa-exclamation-triangle';
                 break;
         }
-        
+
         $('#progressPercent').text(percent + '%');
         $('#progressBar').css('width', percent + '%');
         $('#progressText').text(text);
         $('#processingIcon').attr('class', iconClass);
     }
-    
+
     function checkStatus() {
         $.ajax({
             url: window.location.href,

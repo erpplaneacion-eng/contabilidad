@@ -16,13 +16,13 @@
                     </p>
                 </div>
                 <div class="btn-group">
-                    <a href="{% url 'editar_recibo' recibo.id %}" class="btn btn-primary">
+                    <a href="{% url 'separador_recibos:editar_recibo' recibo.id %}" class="btn btn-primary">
                         <i class="fas fa-edit"></i> Editar
                     </a>
-                    <a href="{% url 'download_imagen' recibo.id %}" class="btn btn-outline-success">
+                    <a href="{% url 'separador_recibos:descargar_imagen' recibo.id %}" class="btn btn-outline-success">
                         <i class="fas fa-download"></i> Imagen
                     </a>
-                    <a href="{% url 'tabla_recibos' %}" class="btn btn-outline-secondary">
+                    <a href="{% url 'separador_recibos:tabla_recibos' %}" class="btn btn-outline-secondary">
                         <i class="fas fa-arrow-left"></i> Volver
                     </a>
                 </div>
@@ -292,7 +292,7 @@
                         <div class="col-md-6">
                             <h6>Exportación</h6>
                             <div class="btn-group" role="group">
-                                <a href="{% url 'descargar_imagen' recibo.id %}" class="btn btn-outline-primary">
+                                <a href="{% url 'separador_recibos:descargar_imagen' recibo.id %}" class="btn btn-outline-primary">
                                     <i class="fas fa-download"></i> Imagen
                                 </a>
                                 <button class="btn btn-outline-secondary" onclick="copiarInfo()">
@@ -321,7 +321,9 @@
         </div>
     </div>
 </div>
+{% endblock %}
 
+{% block extra_js %}
 <script>
 function showImageModal(imageSrc, title) {
     document.getElementById('modalImage').src = imageSrc;
@@ -331,7 +333,7 @@ function showImageModal(imageSrc, title) {
 
 function validarRecibo() {
     if (confirm('¿Marcar este recibo como validado?')) {
-        fetch('{% url "validar_recibo" recibo.id %}', {
+        fetch('{% url "separador_recibos:validar_recibo" recibo.id %}', {
             method: 'POST',
             headers: {
                 'X-CSRFToken': '{{ csrf_token }}',
@@ -355,7 +357,7 @@ function validarRecibo() {
 
 function invalidarRecibo() {
     if (confirm('¿Marcar este recibo como no validado?')) {
-        fetch('{% url "validar_recibo" recibo.id %}', {
+        fetch('{% url "separador_recibos:validar_recibo" recibo.id %}', {
             method: 'POST',
             headers: {
                 'X-CSRFToken': '{{ csrf_token }}',
@@ -387,7 +389,7 @@ Cuenta: {{ recibo.numero_cuenta|default:"N/A" }}
 Referencia: {{ recibo.referencia|default:"N/A" }}
 Fecha: {{ recibo.fecha_aplicacion|default:"N/A"|date:"d/m/Y" }}
     `;
-    
+
     navigator.clipboard.writeText(info.trim()).then(() => {
         alert('Información copiada al portapapeles');
     });

@@ -20,15 +20,12 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-# En producción, usar variable de entorno: export DJANGO_SECRET_KEY='tu-clave-secreta'
-SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', 'django-insecure-9)9uucv^^0x!8x)-b-jhi)d@7ba0=pi*4b+u+_)1br50u$3&qq')
+SECRET_KEY = 'django-insecure-9)9uucv^^0x!8x)-b-jhi)d@7ba0=pi*4b+u+_)1br50u$3&qq'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-# En producción, usar: export DJANGO_DEBUG=False
-DEBUG = os.environ.get('DJANGO_DEBUG', 'True') == 'True'
+DEBUG = True
 
-# En producción, agregar tus dominios: export DJANGO_ALLOWED_HOSTS='tudominio.com,www.tudominio.com'
-ALLOWED_HOSTS = os.environ.get('DJANGO_ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',')
+ALLOWED_HOSTS = []
 
 
 # Application definition
@@ -122,12 +119,9 @@ USE_TZ = True
 
 STATIC_URL = 'static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
-
-# Solo incluir STATICFILES_DIRS si el directorio existe y no es el mismo que STATIC_ROOT
-if (BASE_DIR / 'static').exists() and (BASE_DIR / 'static') != STATIC_ROOT:
-    STATICFILES_DIRS = [
-        BASE_DIR / 'static',
-    ]
+STATICFILES_DIRS = [
+    BASE_DIR / 'static',
+]
 
 # Media files (User uploaded files)
 MEDIA_URL = '/media/'
@@ -146,9 +140,8 @@ LOGOUT_REDIRECT_URL = '/login/'
 # Configuración adicional para Separador de Recibos PDF
 
 # Celery Configuration (OPCIONAL - Solo si usas Celery)
-# Para usar Celery, primero instalar y ejecutar Redis: redis-server
-CELERY_BROKER_URL = os.environ.get('CELERY_BROKER_URL', 'redis://localhost:6379/0')
-CELERY_RESULT_BACKEND = os.environ.get('CELERY_RESULT_BACKEND', 'redis://localhost:6379/0')
+CELERY_BROKER_URL = 'redis://localhost:6379/0'
+CELERY_RESULT_BACKEND = 'redis://localhost:6379/0'
 CELERY_ACCEPT_CONTENT = ['json']
 CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_SERIALIZER = 'json'
@@ -215,16 +208,3 @@ EMAIL_USE_TLS = True
 EMAIL_HOST_USER = ''
 EMAIL_HOST_PASSWORD = ''
 DEFAULT_FROM_EMAIL = 'noreply@separadorrecibos.com'
-
-# Configuraciones de Seguridad Adicionales
-if not DEBUG:
-    # Configuraciones de seguridad para producción
-    SECURE_SSL_REDIRECT = True
-    SESSION_COOKIE_SECURE = True
-    CSRF_COOKIE_SECURE = True
-    SECURE_BROWSER_XSS_FILTER = True
-    SECURE_CONTENT_TYPE_NOSNIFF = True
-    X_FRAME_OPTIONS = 'DENY'
-    SECURE_HSTS_SECONDS = 31536000  # 1 año
-    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
-    SECURE_HSTS_PRELOAD = True

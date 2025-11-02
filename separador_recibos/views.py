@@ -7,17 +7,161 @@ from django.urls import reverse
 from django.core.paginator import Paginator
 from django.db.models import Q, Sum, Count
 from django.utils import timezone
+from django.core.files.base import ContentFile
 import os
 import io
 import logging
 from .models import ProcesamientoRecibo, ReciboDetectado
 from .forms import PDFUploadForm, FiltrosRecibosForm, EditarReciboForm, ConfiguracionProcesamientoForm
-from .tasks import procesar_recibo_pdf
 from .utils.pdf_processor import PDFProcessor
 from .utils.image_extractor import ImageExtractor
 from .utils.pdf_generator import PDFGenerator
 
 logger = logging.getLogger(__name__)
+
+
+def procesar_recibo_sincrono(procesamiento_id):
+    """
+    Procesa un PDF de recibos de forma síncrona (sin Celery/Redis).
+    Versión simplificada para desarrollo local.
+    """
+    try:
+        logger.info(f"Iniciando procesamiento síncrono de PDF: {procesamiento_id}")
+
+        # Obtener el procesamiento
+        procesamiento = ProcesamientoRecibo.objects.get(id=procesamiento_id)
+
+        # Actualizar estado
+        procesamiento.estado = 'PROCESANDO'
+        procesamiento.save()
+
+        # Verificar que el archivo existe
+        if not procesamiento.archivo_original:
+            raise FileNotFoundError("Archivo PDF no encontrado")
+
+        pdf_path = procesamiento.archivo_original.path
+
+        # Paso 1: Detectar recibos
+        logger.info("Detectando recibos en el PDF...")
+        processor = PDFProcessor(pdf_path)
+        recibos_detectados = processor.detectar_recibos_coordenadas()
+
+        if not recibos_detectados:
+            raise ValueError("No se encontraron recibos en el archivo PDF")
+
+        # Paso 2: Extraer imágenes
+        logger.info("Extrayendo imágenes de recibos...")
+        extractor = ImageExtractor(pdf_path)
+        imagenes_data = extractor.procesar_y_guardar_imagenes(recibos_detectados, procesamiento_id)
+
+        # Paso 3: Guardar información en base de datos
+        logger.info("Guardando información de recibos en base de datos...")
+        for i, (recibo_info, imagen_info) in enumerate(zip(recibos_detectados, imagenes_data)):
+            try:
+                # Crear instancia de ReciboDetectado
+                recibo = ReciboDetectado.objects.create(
+                    procesamiento=procesamiento,
+                    numero_secuencial=i + 1,
+                    coordenada_x=recibo_info.get('x', 0),
+                    coordenada_y=recibo_info.get('y', 0),
+                    ancho=recibo_info.get('width', 0),
+                    alto=recibo_info.get('height', 0),
+                    nombre_beneficiario=recibo_info.get('beneficiario', ''),
+                    valor=recibo_info.get('valor'),
+                    entidad_bancaria=recibo_info.get('entidad', ''),
+                    numero_cuenta=recibo_info.get('cuenta', ''),
+                    referencia=recibo_info.get('referencia', ''),
+                    fecha_aplicacion=recibo_info.get('fecha'),
+                    concepto=recibo_info.get('concepto', ''),
+                    estado_pago=recibo_info.get('estado', ''),
+                    texto_extraido=recibo_info.get('texto_completo', '')
+                )
+
+                # Guardar imagen si está disponible
+                if imagen_info and imagen_info.get('imagen_data'):
+                    try:
+                        recibo.imagen_recibo.save(
+                            imagen_info['filename'],
+                            ContentFile(imagen_info['imagen_data']),
+                            save=True
+                        )
+                    except Exception as e:
+                        logger.warning(f"Error guardando imagen para recibo {i + 1}: {str(e)}")
+
+            except Exception as e:
+                logger.error(f"Error guardando recibo {i + 1}: {str(e)}")
+
+        # Paso 4: Generar PDF separado
+        logger.info("Generando PDF separado...")
+        output_path = f"media/pdfs_procesados/recibos_separados_{procesamiento_id}.pdf"
+
+        # Asegurar que el directorio existe
+        os.makedirs(os.path.dirname(output_path), exist_ok=True)
+
+        # Obtener datos de recibos para el generador
+        recibos_db = ReciboDetectado.objects.filter(procesamiento=procesamiento)
+        recibos_data = []
+        imagenes_generadas = []
+
+        for recibo_db in recibos_db:
+            recibo_data = {
+                'numero_secuencial': recibo_db.numero_secuencial,
+                'nombre_beneficiario': recibo_db.nombre_beneficiario,
+                'valor': float(recibo_db.valor) if recibo_db.valor else 0,
+                'entidad_bancaria': recibo_db.entidad_bancaria,
+                'numero_cuenta': recibo_db.numero_cuenta,
+                'referencia': recibo_db.referencia,
+                'fecha_aplicacion': str(recibo_db.fecha_aplicacion) if recibo_db.fecha_aplicacion else '',
+                'concepto': recibo_db.concepto,
+                'estado_pago': recibo_db.estado_pago
+            }
+            recibos_data.append(recibo_data)
+
+            # Crear datos de imagen para el generador
+            imagen_data = {}
+            if recibo_db.imagen_recibo:
+                try:
+                    with open(recibo_db.imagen_recibo.path, 'rb') as f:
+                        imagen_data['imagen_data'] = f.read()
+                except Exception as e:
+                    logger.warning(f"Error leyendo imagen para recibo {recibo_db.numero_secuencial}: {str(e)}")
+                    imagen_data['imagen_data'] = None
+            else:
+                imagen_data['imagen_data'] = None
+
+            imagenes_generadas.append(imagen_data)
+
+        # Generar PDF
+        generator = PDFGenerator(output_path)
+        try:
+            generator.generar_pdf_con_imagenes(recibos_data, imagenes_generadas)
+        except Exception as e:
+            logger.warning(f"Error generando PDF con imágenes: {str(e)}. Intentando PDF simple...")
+            generator.generar_pdf_simple(recibos_data)
+
+        # Actualizar procesamiento
+        procesamiento.archivo_resultado.name = output_path.replace("media/", "")
+        procesamiento.total_recibos = len(recibos_detectados)
+        procesamiento.estado = 'COMPLETADO'
+        procesamiento.save()
+
+        logger.info(f"Procesamiento completado exitosamente. Encontrados {len(recibos_detectados)} recibos")
+
+        return True
+
+    except Exception as e:
+        logger.error(f"Error procesando PDF: {str(e)}")
+
+        # Actualizar estado de error
+        try:
+            procesamiento = ProcesamientoRecibo.objects.get(id=procesamiento_id)
+            procesamiento.estado = 'ERROR'
+            procesamiento.mensaje_error = str(e)
+            procesamiento.save()
+        except:
+            pass
+
+        raise
 
 
 @login_required
@@ -33,9 +177,9 @@ def upload_pdf(request):
                 
                 # Iniciar procesamiento asíncrono
                 procesar_recibo_pdf.delay(procesamiento.id)
-                
+
                 logger.info(f"Procesamiento iniciado para usuario {request.user.username}")
-                return redirect('process_status', procesamiento_id=procesamiento.id)
+                return redirect('separador_recibos:process_status', procesamiento_id=procesamiento.id)
                 
             except Exception as e:
                 logger.error(f"Error guardando procesamiento: {str(e)}")
@@ -234,7 +378,7 @@ def editar_recibo(request, recibo_id):
         form = EditarReciboForm(request.POST, instance=recibo)
         if form.is_valid():
             form.save()
-            return redirect('ver_recibo', recibo_id=recibo.id)
+            return redirect('separador_recibos:ver_recibo', recibo_id=recibo.id)
     else:
         form = EditarReciboForm(instance=recibo)
     

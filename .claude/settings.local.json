@@ -5,7 +5,8 @@
       "Bash(python manage.py makemigrations:*)",
       "Bash(venv/Scripts/python.exe manage.py makemigrations:*)",
       "Bash(venv/Scripts/python.exe:*)",
-      "Bash(tree:*)"
+      "Bash(tree:*)",
+      "Bash(python manage.py check:*)"
     ],
     "deny": [],
     "ask": []
