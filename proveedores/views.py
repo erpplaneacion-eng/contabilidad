@@ -3,8 +3,9 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db import transaction
-from django.views.generic import CreateView, UpdateView, ListView, DetailView
+from django.views.generic import CreateView, UpdateView, ListView, DetailView, DeleteView
 from django.urls import reverse_lazy
+from django.http import JsonResponse
 from .models import Proveedor, Contacto, Impuesto, DocumentoRequerido
 from .forms import (
     ProveedorForm,
@@ -164,6 +165,13 @@ class ProveedorListView(LoginRequiredMixin, ListView):
     ordering = ['-fecha_creacion']
     login_url = '/login/'
 
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        # Estadísticas por naturaleza jurídica
+        context['total_juridica'] = Proveedor.objects.filter(naturaleza_juridica='JURIDICA').count()
+        context['total_natural'] = Proveedor.objects.filter(naturaleza_juridica='NATURAL').count()
+        return context
+
 
 class ProveedorDetailView(LoginRequiredMixin, DetailView):
     """Vista para ver el detalle de un proveedor (solo para usuarios autenticados)"""
@@ -182,3 +190,37 @@ class ProveedorDetailView(LoginRequiredMixin, DetailView):
         except DocumentoRequerido.DoesNotExist:
             context['documentos'] = None
         return context
+
+
+@login_required
+def proveedor_delete_view(request, pk):
+    """Vista para eliminar un proveedor (requiere autenticación y permisos de admin)"""
+
+    # Verificar permisos
+    if not (request.user.is_staff or (hasattr(request.user, 'profile') and request.user.profile.rol == 'ADMIN')):
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return JsonResponse({'success': False, 'error': 'No tiene permisos para eliminar proveedores'}, status=403)
+        messages.error(request, 'No tiene permisos para eliminar proveedores.')
+        return redirect('proveedores:lista')
+
+    proveedor = get_object_or_404(Proveedor, pk=pk)
+
+    if request.method == 'POST':
+        try:
+            nombre = proveedor.nombre_razon_social
+            proveedor.delete()
+
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return JsonResponse({'success': True, 'message': f'Proveedor "{nombre}" eliminado correctamente'})
+
+            messages.success(request, f'Proveedor "{nombre}" eliminado correctamente.')
+            return redirect('proveedores:lista')
+        except Exception as e:
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return JsonResponse({'success': False, 'error': str(e)}, status=500)
+
+            messages.error(request, f'Error al eliminar el proveedor: {str(e)}')
+            return redirect('proveedores:lista')
+
+    # Si no es POST, redirigir a la lista
+    return redirect('proveedores:lista')

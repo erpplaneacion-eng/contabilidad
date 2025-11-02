@@ -15,6 +15,7 @@
 
 {% block content %}
 <div class="proveedores-list">
+    {% csrf_token %}
     <!-- Barra de acciones -->
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
@@ -55,12 +56,19 @@
             <div class="card border-0 shadow-sm" style="border-left: 4px solid #198754 !important;">
                 <div class="card-body">
                     <div class="d-flex justify-content-between align-items-center">
-                        <div>
-                            <p class="text-muted mb-1 small">Página Actual</p>
-                            <h3 class="mb-0">{{ page_obj.number }}</h3>
+                        <div class="flex-grow-1">
+                            <p class="text-muted mb-1 small">Distribución</p>
+                            <div class="d-flex align-items-center gap-3">
+                                <div>
+                                    <span class="badge bg-success">Jurídica: {{ total_juridica|default:0 }}</span>
+                                </div>
+                                <div>
+                                    <span class="badge bg-info">Natural: {{ total_natural|default:0 }}</span>
+                                </div>
+                            </div>
                         </div>
                         <div class="fs-2 text-success opacity-50">
-                            <i class="fas fa-file-alt"></i>
+                            <i class="fas fa-chart-pie"></i>
                         </div>
                     </div>
                 </div>
@@ -137,6 +145,12 @@
                                            title="Editar">
                                             <i class="fas fa-edit"></i>
                                         </a>
+                                        <button type="button"
+                                                class="btn btn-outline-danger"
+                                                title="Eliminar"
+                                                onclick="eliminarProveedor({{ proveedor.pk }}, '{{ proveedor.nombre_razon_social|escapejs }}')">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
                                         {% endif %}
                                     </div>
                                 </td>
@@ -203,4 +217,42 @@
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+{{ block.super }}
+<script>
+function eliminarProveedor(proveedorId, nombreProveedor) {
+    if (confirm('¿Está seguro de que desea eliminar el proveedor "' + nombreProveedor + '"?\n\nEsta acción no se puede deshacer.')) {
+        // Crear formulario oculto para enviar petición POST
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = '{% url "proveedores:eliminar" 0 %}'.replace('0', proveedorId);
+
+        // Agregar token CSRF
+        const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]');
+        if (csrfToken) {
+            const csrfInput = document.createElement('input');
+            csrfInput.type = 'hidden';
+            csrfInput.name = 'csrfmiddlewaretoken';
+            csrfInput.value = csrfToken.value;
+            form.appendChild(csrfInput);
+        } else {
+            // Si no hay token CSRF en la página, obtenerlo de las cookies
+            const csrfCookie = document.cookie.split(';').find(cookie => cookie.trim().startsWith('csrftoken='));
+            if (csrfCookie) {
+                const csrfInput = document.createElement('input');
+                csrfInput.type = 'hidden';
+                csrfInput.name = 'csrfmiddlewaretoken';
+                csrfInput.value = csrfCookie.split('=')[1];
+                form.appendChild(csrfInput);
+            }
+        }
+
+        // Agregar al DOM y enviar
+        document.body.appendChild(form);
+        form.submit();
+    }
+}
+</script>
 {% endblock %}
