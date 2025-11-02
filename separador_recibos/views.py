@@ -20,13 +20,17 @@ from .utils.pdf_generator import PDFGenerator
 logger = logging.getLogger(__name__)
 
 
-def procesar_recibo_sincrono(procesamiento_id):
+def procesar_recibo_sincrono(procesamiento_id, calidad_imagen='media'):
     """
     Procesa un PDF de recibos de forma síncrona (sin Celery/Redis).
     Versión simplificada para desarrollo local.
+    
+    Args:
+        procesamiento_id: ID del procesamiento
+        calidad_imagen: Calidad de imagen ('baja', 'media', 'alta'). Default: 'media'
     """
     try:
-        logger.info(f"Iniciando procesamiento síncrono de PDF: {procesamiento_id}")
+        logger.info(f"Iniciando procesamiento síncrono de PDF: {procesamiento_id}, calidad: {calidad_imagen}")
 
         # Obtener el procesamiento
         procesamiento = ProcesamientoRecibo.objects.get(id=procesamiento_id)
@@ -49,10 +53,10 @@ def procesar_recibo_sincrono(procesamiento_id):
         if not recibos_detectados:
             raise ValueError("No se encontraron recibos en el archivo PDF")
 
-        # Paso 2: Extraer imágenes
-        logger.info("Extrayendo imágenes de recibos...")
+        # Paso 2: Extraer imágenes con la calidad especificada
+        logger.info(f"Extrayendo imágenes de recibos con calidad: {calidad_imagen}...")
         extractor = ImageExtractor(pdf_path)
-        imagenes_data = extractor.procesar_y_guardar_imagenes(recibos_detectados, procesamiento_id)
+        imagenes_data = extractor.procesar_y_guardar_imagenes(recibos_detectados, procesamiento_id, calidad_imagen=calidad_imagen)
 
         # Paso 3: Guardar información en base de datos
         logger.info("Guardando información de recibos en base de datos...")
@@ -175,10 +179,14 @@ def upload_pdf(request):
                 procesamiento.usuario = request.user
                 procesamiento.save()
 
+                # Leer configuración de calidad de imagen del formulario
+                calidad_imagen = request.POST.get('calidad_imagen', 'media')
+                logger.info(f"Calidad de imagen seleccionada: {calidad_imagen}")
+
                 # Procesar de forma síncrona (sin Celery/Redis)
-                # Para usar procesamiento asíncrono, reemplazar con: procesar_recibo_pdf.delay(procesamiento.id)
+                # Para usar procesamiento asíncrono, reemplazar con: procesar_recibo_pdf.delay(procesamiento.id, calidad_imagen)
                 try:
-                    procesar_recibo_sincrono(procesamiento.id)
+                    procesar_recibo_sincrono(procesamiento.id, calidad_imagen=calidad_imagen)
                     logger.info(f"Procesamiento completado para usuario {request.user.username}")
                 except Exception as e:
                     logger.error(f"Error en procesamiento: {str(e)}")

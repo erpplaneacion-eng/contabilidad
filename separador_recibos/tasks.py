@@ -15,10 +15,15 @@ logger = logging.getLogger(__name__)
 
 
 @shared_task
-def procesar_recibo_pdf(procesamiento_id):
-    """Tarea asíncrona para procesar PDF de recibos"""
+def procesar_recibo_pdf(procesamiento_id, calidad_imagen='media'):
+    """Tarea asíncrona para procesar PDF de recibos
+    
+    Args:
+        procesamiento_id: ID del procesamiento
+        calidad_imagen: Calidad de imagen ('baja', 'media', 'alta'). Default: 'media'
+    """
     try:
-        logger.info(f"Iniciando procesamiento de PDF: {procesamiento_id}")
+        logger.info(f"Iniciando procesamiento de PDF: {procesamiento_id}, calidad: {calidad_imagen}")
         
         # Obtener el procesamiento
         procesamiento = ProcesamientoRecibo.objects.get(id=procesamiento_id)
@@ -41,10 +46,10 @@ def procesar_recibo_pdf(procesamiento_id):
         if not recibos_detectados:
             raise ValueError("No se encontraron recibos en el archivo PDF")
         
-        # Paso 2: Extraer imágenes
-        logger.info("Extrayendo imágenes de recibos...")
+        # Paso 2: Extraer imágenes con la calidad especificada
+        logger.info(f"Extrayendo imágenes de recibos con calidad: {calidad_imagen}...")
         extractor = ImageExtractor(pdf_path)
-        imagenes_data = extractor.procesar_y_guardar_imagenes(recibos_detectados, procesamiento_id)
+        imagenes_data = extractor.procesar_y_guardar_imagenes(recibos_detectados, procesamiento_id, calidad_imagen=calidad_imagen)
         
         # Paso 3: Guardar información en base de datos
         logger.info("Guardando información de recibos en base de datos...")

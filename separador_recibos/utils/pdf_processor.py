@@ -91,8 +91,8 @@ class PDFProcessor:
                 if 'individual' in texto_junto_lower and 'pagos' in texto_junto_lower:
                     # AJUSTE: La palabra "Recibo" está centrada en el encabezado del recibo
                     # Necesitamos restar un offset para capturar la parte izquierda del recibo
-                    # Offset típico: 25-30 puntos para capturar el margen izquierdo completo
-                    OFFSET_X_RECIBO = 95
+                    # Offset típico: 155-30 puntos para capturar el margen izquierdo completo
+                    OFFSET_X_RECIBO = 155
                     x_coord_ajustado = max(0, x_coord - OFFSET_X_RECIBO)
                     
                     recibo_info = {
@@ -134,9 +134,9 @@ class PDFProcessor:
             if idx_actual + 1 < len(y_recibos_ordenados):
                 altura_recibo = y_recibos_ordenados[idx_actual + 1] - y_inicio
             else:
-                altura_recibo = 228  # Altura estimada basada en los datos
+                altura_recibo = 225  # Altura estimada basada en los datos
         except ValueError:
-            altura_recibo = 228
+            altura_recibo = 225
 
         logger.info(f"  Recibo en Y={y_inicio:.1f}, altura calculada={altura_recibo:.1f}")
 

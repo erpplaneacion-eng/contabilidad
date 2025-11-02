@@ -17,12 +17,17 @@ class ImageExtractor:
     def __init__(self, pdf_path: str):
         self.pdf_path = pdf_path
     
-    def extraer_imagen_recibo(self, coordenadas: Dict, output_size: Tuple[int, int] = (600, 800)) -> Image.Image:
+    def extraer_imagen_recibo(self, coordenadas: Dict, output_size: Tuple[int, int] = (600, 800), calidad_imagen: str = 'media') -> Image.Image:
         """
         Extrae el pantallazo visual de cada recibo usando coordenadas
+        
+        Args:
+            coordenadas: Diccionario con coordenadas del recibo
+            output_size: Tamaño de salida de la imagen
+            calidad_imagen: Calidad de extracción ('baja', 'media', 'alta')
         """
         try:
-            logger.info(f"Extrayendo imagen de recibo - Coordenadas: {coordenadas}")
+            logger.info(f"Extrayendo imagen de recibo - Coordenadas: {coordenadas}, Calidad: {calidad_imagen}")
             
             doc = fitz.open(self.pdf_path)
             pagina_num = coordenadas['pagina'] - 1  # 0-indexed
@@ -49,8 +54,19 @@ class ImageExtractor:
             
             rect = fitz.Rect(x, y, x + width, y + height)
             
-            # Extraer como imagen con alta calidad
-            mat = fitz.Matrix(2, 2)  # Factor de escala para mejor calidad
+            # Determinar factor de escala según calidad
+            # Factor de escala afecta la resolución del pixmap
+            factores_escala = {
+                'baja': 1.0,   # Más rápido, menor resolución
+                'media': 2.0,  # Balance velocidad/calidad
+                'alta': 3.0    # Más lento, mayor resolución
+            }
+            escala = factores_escala.get(calidad_imagen.lower(), 2.0)
+            
+            logger.info(f"  Factor de escala: {escala}x para calidad {calidad_imagen}")
+            
+            # Extraer como imagen con calidad ajustada
+            mat = fitz.Matrix(escala, escala)
             pix = page.get_pixmap(matrix=mat, clip=rect)
             
             # Convertir a PIL Image
@@ -90,31 +106,69 @@ class ImageExtractor:
         
         return resized_img
     
-    def procesar_y_guardar_imagenes(self, recibos_detectados: list, procesamiento_id: str) -> list:
+    def procesar_y_guardar_imagenes(self, recibos_detectados: list, procesamiento_id: str, calidad_imagen: str = 'media') -> list:
         """
         Procesa todos los recibos y guarda sus imágenes
+        
+        Args:
+            recibos_detectados: Lista de recibos detectados
+            procesamiento_id: ID del procesamiento
+            calidad_imagen: Calidad de imagen ('baja', 'media', 'alta')
         """
-        logger.info(f"Procesando {len(recibos_detectados)} imágenes de recibos")
+        logger.info(f"Procesando {len(recibos_detectados)} imágenes de recibos con calidad: {calidad_imagen}")
         imagenes_procesadas = []
+        
+        # Determinar formato y calidad de guardado según calidad_imagen
+        # PNG no tiene parámetro quality, es lossless
+        # Para mejor control, usamos JPEG con quality o PNG según calidad
+        configuraciones_guardado = {
+            'baja': {'format': 'JPEG', 'quality': 75, 'optimize': False},   # JPEG con compresión
+            'media': {'format': 'JPEG', 'quality': 85, 'optimize': True},    # JPEG calidad media
+            'alta': {'format': 'PNG', 'optimize': True}                      # PNG lossless
+        }
+        config = configuraciones_guardado.get(calidad_imagen.lower(), configuraciones_guardado['media'])
         
         for i, recibo in enumerate(recibos_detectados):
             try:
                 logger.info(f"Procesando imagen del recibo {i + 1}")
                 
-                # Extraer imagen
-                img = self.extraer_imagen_recibo(recibo)
+                # Extraer imagen con calidad especificada
+                img = self.extraer_imagen_recibo(recibo, calidad_imagen=calidad_imagen)
                 
-                # Preparar para guardar
+                # Preparar para guardar con formato y calidad ajustada
                 img_buffer = io.BytesIO()
-                img.save(img_buffer, format='PNG', quality=95)
+                
+                # Si la imagen tiene transparencia y vamos a usar JPEG, convertir a RGB
+                if config['format'] == 'JPEG' and img.mode in ('RGBA', 'LA', 'P'):
+                    # Crear fondo blanco para transparencias
+                    fondo = Image.new('RGB', img.size, (255, 255, 255))
+                    if img.mode == 'P':
+                        img = img.convert('RGBA')
+                    fondo.paste(img, mask=img.split()[-1] if img.mode == 'RGBA' else None)
+                    img = fondo
+                
+                # Guardar con configuración según calidad
+                if config['format'] == 'JPEG':
+                    img.save(img_buffer, format='JPEG', quality=config['quality'], optimize=config.get('optimize', False))
+                else:  # PNG
+                    # PNG usa compress_level (0-9) para controlar compresión, no quality
+                    # 0 = sin compresión (rápido), 9 = máxima compresión (lento)
+                    compress_level = 3 if calidad_imagen.lower() == 'baja' else 6 if calidad_imagen.lower() == 'media' else 9
+                    img.save(img_buffer, format='PNG', optimize=config.get('optimize', True), compress_level=compress_level)
+                
                 img_buffer.seek(0)
+                
+                # Determinar extensión según formato usado
+                extension = 'jpg' if config['format'] == 'JPEG' else 'png'
                 
                 # Crear información de la imagen
                 img_info = {
                     'numero_recibo': i + 1,
                     'imagen_data': img_buffer.getvalue(),
-                    'filename': f'recibo_{i + 1}.png',
-                    'coordenadas': recibo
+                    'filename': f'recibo_{i + 1}.{extension}',
+                    'coordenadas': recibo,
+                    'formato': config['format'],
+                    'calidad': calidad_imagen
                 }
                 
                 imagenes_procesadas.append(img_info)
