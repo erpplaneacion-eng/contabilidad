@@ -243,46 +243,5 @@
         </div>
         {% endif %}
     </div>
-
-    <!-- Acciones rápidas -->
-    <div class="row g-4 mt-4">
-        <div class="col-12">
-            <div class="card border-0 shadow-sm">
-                <div class="card-header bg-white border-bottom">
-                    <h5 class="mb-0">
-                        <i class="fas fa-bolt me-2 text-warning"></i>
-                        Acciones Rápidas
-                    </h5>
-                </div>
-                <div class="card-body">
-                    <div class="row g-3">
-                        {% if tiene_acceso_proveedores or user.is_staff %}
-                        <div class="col-md-4">
-                            <a href="{% url 'proveedores:lista' %}" class="btn btn-outline-primary w-100 py-3">
-                                <i class="fas fa-list fa-2x d-block mb-2"></i>
-                                Ver Lista de Proveedores
-                            </a>
-                        </div>
-                        {% endif %}
-
-                        {% if tiene_acceso_separador or user.is_staff %}
-                        <div class="col-md-4">
-                            <a href="{% url 'separador_recibos:upload_pdf' %}" class="btn btn-outline-success w-100 py-3">
-                                <i class="fas fa-cloud-upload-alt fa-2x d-block mb-2"></i>
-                                Subir Nuevo PDF
-                            </a>
-                        </div>
-                        <div class="col-md-4">
-                            <a href="{% url 'separador_recibos:tabla_recibos' %}" class="btn btn-outline-info w-100 py-3">
-                                <i class="fas fa-table fa-2x d-block mb-2"></i>
-                                Ver Tabla de Recibos
-                            </a>
-                        </div>
-                        {% endif %}
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
 </div>
 {% endblock %}
