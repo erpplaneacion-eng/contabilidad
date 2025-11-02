@@ -89,14 +89,21 @@ class PDFProcessor:
                 # Buscar "recibo individual de pagos" con o sin "sucursal virtual"
                 texto_junto_lower = texto_junto.lower()
                 if 'individual' in texto_junto_lower and 'pagos' in texto_junto_lower:
+                    # AJUSTE: La palabra "Recibo" está centrada en el encabezado del recibo
+                    # Necesitamos restar un offset para capturar la parte izquierda del recibo
+                    # Offset típico: 25-30 puntos para capturar el margen izquierdo completo
+                    OFFSET_X_RECIBO = 95
+                    x_coord_ajustado = max(0, x_coord - OFFSET_X_RECIBO)
+                    
                     recibo_info = {
                         'pagina': pagina_num + 1,
-                        'coordenada_x': coordenadas_inicio['x0'],
+                        'coordenada_x': x_coord_ajustado,
                         'coordenada_y': coordenadas_inicio['y0'],
                         'word_index': i
                     }
                     recibos.append(recibo_info)
                     logger.info(f"✅ Recibo DETECTADO en página {pagina_num + 1}: '{texto_junto}'")
+                    logger.info(f"   Coordenada X original: {x_coord:.1f}, ajustada: {x_coord_ajustado:.1f} (offset: -{OFFSET_X_RECIBO})")
                 else:
                     logger.warning(f"   ❌ No coincide con patrón esperado")
 
@@ -137,7 +144,7 @@ class PDFProcessor:
             'pagina': recibo_base['pagina'],
             'x': recibo_base['coordenada_x'],
             'y': y_inicio,
-            'width': 595,  # A4 width en puntos
+            'width': 612,  # Letter (Carta) width en puntos (8.5 pulgadas = 612 puntos)
             'height': altura_recibo,
             'texto_completo': '',
             'beneficiario': '',

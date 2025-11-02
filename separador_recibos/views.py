@@ -541,3 +541,6 @@ def exportar_recibos(request):
     except Exception as e:
         logger.error(f"Error exportando recibos: {str(e)}")
         return HttpResponse(f"Error exportando: {str(e)}", status=500)
+    
+    
+    

@@ -35,7 +35,7 @@ class ImageExtractor:
             # Definir rectángulo basado en coordenadas detectadas
             x = coordenadas.get('x', 0)
             y = coordenadas.get('y', 0)
-            width = coordenadas.get('width', 595)  # A4 width por defecto
+            width = coordenadas.get('width', 612)  # Letter (Carta) width por defecto (8.5 pulgadas = 612 puntos)
             height = coordenadas.get('height', 800)  # Altura estimada
             
             # Asegurar que las coordenadas estén dentro de los límites de la página

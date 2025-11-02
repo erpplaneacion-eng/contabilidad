@@ -2,7 +2,7 @@
 Módulo para generación de PDF separado con cada recibo en página individual
 """
 from reportlab.pdfgen import canvas
-from reportlab.lib.pagesizes import A4
+from reportlab.lib.pagesizes import LETTER
 from reportlab.lib.units import inch, cm
 from reportlab.lib.colors import black, blue, green
 from reportlab.lib.styles import getSampleStyleSheet
@@ -22,7 +22,7 @@ class PDFGenerator:
     
     def __init__(self, output_path: str):
         self.output_path = output_path
-        self.width, self.height = A4
+        self.width, self.height = LETTER  # Letter (Carta) tamaño: 612 x 792 puntos
         self.margin = 1 * inch
     
     def generar_pdf_con_imagenes(self, recibos_data: List[Dict], imagenes_data: List[Dict]) -> str:
@@ -35,7 +35,7 @@ class PDFGenerator:
             # Crear documento PDF
             doc = SimpleDocTemplate(
                 self.output_path,
-                pagesize=A4,
+                pagesize=LETTER,  # Letter (Carta) tamaño: 612 x 792 puntos
                 rightMargin=self.margin,
                 leftMargin=self.margin,
                 topMargin=self.margin,
@@ -149,8 +149,8 @@ class PDFGenerator:
         try:
             logger.info("Generando PDF simple sin imágenes")
             
-            c = canvas.Canvas(self.output_path, pagesize=A4)
-            width, height = A4
+            c = canvas.Canvas(self.output_path, pagesize=LETTER)  # Letter (Carta) tamaño: 612 x 792 puntos
+            width, height = LETTER
             
             y_position = height - 50
             
@@ -238,8 +238,8 @@ class PDFGenerator:
         try:
             stats_path = self.output_path.replace('.pdf', '_estadisticas.pdf')
             
-            c = canvas.Canvas(stats_path, pagesize=A4)
-            width, height = A4
+            c = canvas.Canvas(stats_path, pagesize=LETTER)  # Letter (Carta) tamaño: 612 x 792 puntos
+            width, height = LETTER
             
             # Título
             c.setFont("Helvetica-Bold", 16)
