@@ -1,151 +1,173 @@
 {% extends 'base_authenticated.html' %}
+{% load static %}
+
+{% block title %}Dashboard de Recibos - Sistema de Gestión Contable{% endblock %}
+
+{% block page_title %}
+    <i class="fas fa-chart-line me-2"></i> Dashboard de Recibos
+{% endblock %}
 
 {% block content %}
-<div class="container-fluid">
-    <!-- Estadísticas principales -->
-    <div class="row mb-4">
+<div class="dashboard-recibos">
+    <!-- Barra de título -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="mb-0">
+                <i class="fas fa-chart-line me-2"></i> Dashboard de Recibos
+            </h2>
+            <p class="text-muted mb-0">
+                Resumen de procesamiento de recibos PDF
+            </p>
+        </div>
+        <div>
+            <a href="{% url 'separador_recibos:upload_pdf' %}" class="btn btn-success">
+                <i class="fas fa-plus me-1"></i> Nuevo Procesamiento
+            </a>
+        </div>
+    </div>
+
+    <!-- Estadísticas rápidas -->
+    <div class="row g-3 mb-4">
         <div class="col-md-3">
-            <div class="card text-white" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+            <div class="card border-0 shadow-sm" style="border-left: 4px solid #0d6efd !important;">
                 <div class="card-body">
-                    <div class="d-flex justify-content-between">
+                    <div class="d-flex justify-content-between align-items-center">
                         <div>
-                            <h6 class="card-title">Total Procesamientos</h6>
-                            <h2 class="mb-0">{{ total_procesamientos }}</h2>
+                            <p class="text-muted mb-1 small">Total Procesamientos</p>
+                            <h3 class="mb-0">{{ total_procesamientos|default:0 }}</h3>
                         </div>
-                        <div class="align-self-center">
-                            <i class="fas fa-file-pdf fa-2x"></i>
+                        <div class="fs-2 text-primary opacity-50">
+                            <i class="fas fa-file-pdf"></i>
                         </div>
                     </div>
-                </div>
-                <div class="card-footer bg-transparent border-0">
-                    <small>Archivos PDF procesados</small>
                 </div>
             </div>
         </div>
-        
+
         <div class="col-md-3">
-            <div class="card text-white" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
+            <div class="card border-0 shadow-sm" style="border-left: 4px solid #dc3545 !important;">
                 <div class="card-body">
-                    <div class="d-flex justify-content-between">
+                    <div class="d-flex justify-content-between align-items-center">
                         <div>
-                            <h6 class="card-title">Total Recibos</h6>
-                            <h2 class="mb-0">{{ total_recibos }}</h2>
+                            <p class="text-muted mb-1 small">Total Recibos</p>
+                            <h3 class="mb-0">{{ total_recibos|default:0 }}</h3>
                         </div>
-                        <div class="align-self-center">
-                            <i class="fas fa-receipt fa-2x"></i>
+                        <div class="fs-2 text-danger opacity-50">
+                            <i class="fas fa-receipt"></i>
                         </div>
                     </div>
-                </div>
-                <div class="card-footer bg-transparent border-0">
-                    <small>Recibos extraídos</small>
                 </div>
             </div>
         </div>
-        
+
         <div class="col-md-3">
-            <div class="card text-white" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">
+            <div class="card border-0 shadow-sm" style="border-left: 4px solid #198754 !important;">
                 <div class="card-body">
-                    <div class="d-flex justify-content-between">
+                    <div class="d-flex justify-content-between align-items-center">
                         <div>
-                            <h6 class="card-title">Valor Total</h6>
-                            <h2 class="mb-0">${{ valor_total|floatformat:0|default:"0" }}</h2>
+                            <p class="text-muted mb-1 small">Valor Total</p>
+                            <h3 class="mb-0">${{ valor_total|floatformat:0|default:"0" }}</h3>
                         </div>
-                        <div class="align-self-center">
-                            <i class="fas fa-dollar-sign fa-2x"></i>
+                        <div class="fs-2 text-success opacity-50">
+                            <i class="fas fa-dollar-sign"></i>
                         </div>
                     </div>
-                </div>
-                <div class="card-footer bg-transparent border-0">
-                    <small>En todos los recibos</small>
                 </div>
             </div>
         </div>
-        
+
         <div class="col-md-3">
-            <div class="card text-white" style="background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);">
+            <div class="card border-0 shadow-sm" style="border-left: 4px solid #ffc107 !important;">
                 <div class="card-body">
-                    <div class="d-flex justify-content-between">
+                    <div class="d-flex justify-content-between align-items-center">
                         <div>
-                            <h6 class="card-title">Procesamientos Recientes</h6>
-                            <h2 class="mb-0">{{ procesamientos_recientes|length }}</h2>
+                            <p class="text-muted mb-1 small">Recientes (7d)</p>
+                            <h3 class="mb-0">{{ procesamientos_recientes|length }}</h3>
                         </div>
-                        <div class="align-self-center">
-                            <i class="fas fa-clock fa-2x"></i>
+                        <div class="fs-2 text-warning opacity-50">
+                            <i class="fas fa-clock"></i>
                         </div>
                     </div>
-                </div>
-                <div class="card-footer bg-transparent border-0">
-                    <small>Últimos 7 días</small>
                 </div>
             </div>
         </div>
     </div>
-    
-    <div class="row">
+
+    <div class="row g-4">
         <!-- Procesamientos recientes -->
-        <div class="col-md-8">
-            <div class="card">
-                <div class="card-header d-flex justify-content-between align-items-center">
-                    <h5 class="mb-0">
-                        <i class="fas fa-history"></i> Procesamientos Recientes
-                    </h5>
-                    <a href="{% url 'separador_recibos:upload_pdf' %}" class="btn btn-primary btn-sm">
-                        <i class="fas fa-plus"></i> Nuevo Procesamiento
-                    </a>
+        <div class="col-lg-8">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white border-bottom">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">
+                            <i class="fas fa-history me-2"></i> Procesamientos Recientes
+                        </h5>
+                        <span class="badge bg-secondary">{{ procesamientos_recientes|length }}</span>
+                    </div>
                 </div>
-                <div class="card-body">
+                <div class="card-body p-0">
                     {% if procesamientos_recientes %}
                     <div class="table-responsive">
-                        <table class="table table-hover">
-                            <thead>
+                        <table class="table table-hover mb-0">
+                            <thead class="table-light">
                                 <tr>
                                     <th>Fecha</th>
                                     <th>Archivo</th>
                                     <th>Estado</th>
-                                    <th>Recibos</th>
-                                    <th>Acciones</th>
+                                    <th class="text-center">Recibos</th>
+                                    <th class="text-center">Acciones</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 {% for proc in procesamientos_recientes %}
                                 <tr>
                                     <td>
-                                        <small>{{ proc.fecha_subida|date:"d/m/Y H:i" }}</small>
+                                        <small class="text-muted">{{ proc.fecha_subida|date:"d/m/Y H:i" }}</small>
                                     </td>
                                     <td>
-                                        <small class="text-truncate d-inline-block" style="max-width: 200px;">
+                                        <span class="text-truncate d-inline-block" style="max-width: 250px;">
                                             {{ proc.archivo_original.name|default:"Sin nombre" }}
-                                        </small>
+                                        </span>
                                     </td>
                                     <td>
                                         {% if proc.estado == 'COMPLETADO' %}
-                                            <span class="badge bg-success">Completado</span>
+                                            <span class="badge bg-success">
+                                                <i class="fas fa-check me-1"></i> Completado
+                                            </span>
                                         {% elif proc.estado == 'PROCESANDO' %}
-                                            <span class="badge bg-warning">Procesando</span>
+                                            <span class="badge bg-warning text-dark">
+                                                <i class="fas fa-spinner me-1"></i> Procesando
+                                            </span>
                                         {% elif proc.estado == 'ERROR' %}
-                                            <span class="badge bg-danger">Error</span>
+                                            <span class="badge bg-danger">
+                                                <i class="fas fa-times me-1"></i> Error
+                                            </span>
                                         {% else %}
                                             <span class="badge bg-secondary">{{ proc.estado }}</span>
                                         {% endif %}
                                     </td>
-                                    <td>
+                                    <td class="text-center">
                                         {% if proc.total_recibos > 0 %}
                                             <span class="badge bg-info">{{ proc.total_recibos }}</span>
                                         {% else %}
                                             <span class="text-muted">-</span>
                                         {% endif %}
                                     </td>
-                                    <td>
-                                        <a href="{% url 'separador_recibos:process_status' proc.id %}"
-                                           class="btn btn-sm btn-outline-primary">
-                                            <i class="fas fa-eye"></i>
-                                        </a>
-                                        {% if proc.archivo_resultado %}
-                                        <a href="{% url 'separador_recibos:download_result' proc.id %}"
-                                           class="btn btn-sm btn-outline-success">
-                                            <i class="fas fa-download"></i>
-                                        </a>
-                                        {% endif %}
+                                    <td class="text-center">
+                                        <div class="btn-group btn-group-sm" role="group">
+                                            <a href="{% url 'separador_recibos:process_status' proc.id %}"
+                                               class="btn btn-outline-primary"
+                                               title="Ver Estado">
+                                                <i class="fas fa-eye"></i>
+                                            </a>
+                                            {% if proc.archivo_resultado %}
+                                            <a href="{% url 'separador_recibos:download_result' proc.id %}"
+                                               class="btn btn-outline-success"
+                                               title="Descargar">
+                                                <i class="fas fa-download"></i>
+                                            </a>
+                                            {% endif %}
+                                        </div>
                                     </td>
                                 </tr>
                                 {% endfor %}
@@ -153,75 +175,83 @@
                         </table>
                     </div>
                     {% else %}
-                    <div class="text-center py-5">
-                        <i class="fas fa-file-pdf fa-3x text-muted mb-3"></i>
-                        <p class="text-muted">No hay procesamientos recientes</p>
-                        <a href="{% url 'separador_recibos:upload_pdf' %}" class="btn btn-primary">
-                            <i class="fas fa-upload"></i> Subir tu primer PDF
+                    <div class="p-5 text-center">
+                        <i class="fas fa-inbox fa-4x text-muted mb-3"></i>
+                        <h4 class="text-muted">No hay procesamientos</h4>
+                        <p class="text-muted">Comienza subiendo un archivo PDF para procesar.</p>
+                        <a href="{% url 'separador_recibos:upload_pdf' %}" class="btn btn-primary mt-3">
+                            <i class="fas fa-plus me-1"></i> Subir Primer PDF
                         </a>
                     </div>
                     {% endif %}
                 </div>
             </div>
         </div>
-        
+
         <!-- Top entidades bancarias -->
-        <div class="col-md-4">
-            <div class="card">
-                <div class="card-header">
+        <div class="col-lg-4">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white border-bottom">
                     <h5 class="mb-0">
-                        <i class="fas fa-chart-bar"></i> Top Entidades Bancarias
+                        <i class="fas fa-university me-2"></i> Top Entidades
                     </h5>
                 </div>
                 <div class="card-body">
-                    {% if entidades_stats %}
+                    {% if top_entidades %}
                     <div class="list-group list-group-flush">
-                        {% for entidad in entidades_stats %}
-                        <div class="list-group-item d-flex justify-content-between align-items-center px-0">
+                        {% for entidad in top_entidades %}
+                        <div class="list-group-item px-0 d-flex justify-content-between align-items-center">
                             <div>
-                                <h6 class="mb-1">{{ entidad.entidad_bancaria|default:"Entidad no especificada" }}</h6>
+                                <strong>{{ entidad.entidad_bancaria|default:"Sin especificar" }}</strong>
+                                <br>
                                 <small class="text-muted">
-                                    {{ entidad.total_recibos }} recibos
+                                    Valor: ${{ entidad.valor_total|floatformat:0|default:"0" }}
                                 </small>
                             </div>
-                            <div class="text-end">
-                                <div class="fw-bold">${{ entidad.valor_total|default:0|floatformat:0 }}</div>
-                                <div class="progress mt-1" style="height: 4px; width: 60px;">
-                                    {% widthratio entidad.valor_total valor_total 100 as percentage %}
-                                    <div class="progress-bar" role="progressbar" 
-                                         style="width: {{ percentage }}%"></div>
-                                </div>
-                            </div>
+                            <span class="badge bg-primary rounded-pill">{{ entidad.total }}</span>
                         </div>
                         {% endfor %}
                     </div>
                     {% else %}
-                    <div class="text-center py-4">
-                        <i class="fas fa-chart-pie fa-2x text-muted mb-2"></i>
-                        <p class="text-muted">No hay datos disponibles</p>
-                    </div>
+                    <p class="text-muted text-center mb-0">
+                        <i class="fas fa-info-circle me-2"></i>
+                        No hay datos disponibles
+                    </p>
                     {% endif %}
                 </div>
             </div>
-            
-            <!-- Acciones rápidas -->
-            <div class="card mt-4">
-                <div class="card-header">
+        </div>
+    </div>
+
+    <!-- Acciones rápidas -->
+    <div class="row g-4 mt-2">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white border-bottom">
                     <h5 class="mb-0">
-                        <i class="fas fa-bolt"></i> Acciones Rápidas
+                        <i class="fas fa-bolt me-2 text-warning"></i> Acciones Rápidas
                     </h5>
                 </div>
                 <div class="card-body">
-                    <div class="d-grid gap-2">
-                        <a href="{% url 'separador_recibos:upload_pdf' %}" class="btn btn-primary">
-                            <i class="fas fa-upload"></i> Subir PDF
-                        </a>
-                        <a href="{% url 'separador_recibos:tabla_recibos' %}" class="btn btn-outline-info">
-                            <i class="fas fa-table"></i> Ver Tabla de Recibos
-                        </a>
-                        <a href="{% url 'separador_recibos:exportar_recibos' %}" class="btn btn-outline-success">
-                            <i class="fas fa-file-export"></i> Exportar a CSV
-                        </a>
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <a href="{% url 'separador_recibos:upload_pdf' %}" class="btn btn-outline-success w-100 py-3">
+                                <i class="fas fa-cloud-upload-alt fa-2x d-block mb-2"></i>
+                                Subir Nuevo PDF
+                            </a>
+                        </div>
+                        <div class="col-md-4">
+                            <a href="{% url 'separador_recibos:tabla_recibos' %}" class="btn btn-outline-info w-100 py-3">
+                                <i class="fas fa-table fa-2x d-block mb-2"></i>
+                                Ver Tabla Completa
+                            </a>
+                        </div>
+                        <div class="col-md-4">
+                            <a href="{% url 'separador_recibos:exportar_recibos' %}" class="btn btn-outline-primary w-100 py-3">
+                                <i class="fas fa-file-csv fa-2x d-block mb-2"></i>
+                                Exportar a CSV
+                            </a>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -252,8 +282,10 @@ $(document).ready(function() {
         });
     }
 
-    // Check every 30 seconds
-    setInterval(checkProcessingStatus, 30000);
+    // Check every 10 seconds for processing updates
+    if ($('.badge.bg-warning').length > 0) {
+        setInterval(checkProcessingStatus, 10000);
+    }
 });
 </script>
 {% endblock %}

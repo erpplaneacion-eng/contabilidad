@@ -3,48 +3,71 @@
 {% block content %}
 <div class="container-fluid">
     <!-- Estadísticas y controles -->
-    <div class="row mb-4">
+    <div class="row g-3 mb-4">
         <div class="col-md-3">
-            <div class="card text-white bg-primary">
+            <div class="card border-0 shadow-sm" style="border-left: 4px solid #0d6efd !important;">
                 <div class="card-body">
-                    <h6 class="card-title">Total Recibos</h6>
-                    <h2 class="mb-0">{{ total_recibos }}</h2>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <p class="text-muted mb-1 small">Total Recibos</p>
+                            <h3 class="mb-0">{{ total_recibos }}</h3>
+                        </div>
+                        <div class="fs-2 text-primary opacity-50">
+                            <i class="fas fa-receipt"></i>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
         <div class="col-md-3">
-            <div class="card text-white bg-success">
+            <div class="card border-0 shadow-sm" style="border-left: 4px solid #198754 !important;">
                 <div class="card-body">
-                    <h6 class="card-title">Valor Total</h6>
-                    <h2 class="mb-0">${{ valor_total|floatformat:0|default:"0" }}</h2>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <p class="text-muted mb-1 small">Valor Total</p>
+                            <h3 class="mb-0">${{ valor_total|floatformat:0|default:"0" }}</h3>
+                        </div>
+                        <div class="fs-2 text-success opacity-50">
+                            <i class="fas fa-dollar-sign"></i>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
         <div class="col-md-3">
-            <div class="card text-white bg-info">
+            <div class="card border-0 shadow-sm" style="border-left: 4px solid #0dcaf0 !important;">
                 <div class="card-body">
-                    <h6 class="card-title">Recibos Validados</h6>
-                    <h2 class="mb-0">{{ recibos_validados }}</h2>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <p class="text-muted mb-1 small">Recibos Validados</p>
+                            <h3 class="mb-0">{{ recibos_validados }}</h3>
+                        </div>
+                        <div class="fs-2 text-info opacity-50">
+                            <i class="fas fa-check-circle"></i>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
         <div class="col-md-3">
-            <div class="card">
-                <div class="card-body text-center">
-                    <a href="{% url 'separador_recibos:exportar_recibos' %}" class="btn btn-success">
-                        <i class="fas fa-download"></i> Exportar a CSV
-                    </a>
+            <div class="card border-0 shadow-sm" style="border-left: 4px solid #198754 !important;">
+                <div class="card-body">
+                    <div class="d-flex justify-content-center align-items-center" style="min-height: 80px;">
+                        <a href="{% url 'separador_recibos:exportar_recibos' %}" class="btn btn-success">
+                            <i class="fas fa-download me-1"></i> Exportar a CSV
+                        </a>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
     
     <!-- Filtros -->
-    <div class="card mb-4">
-        <div class="card-header">
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-header bg-white border-bottom">
             <h5 class="mb-0">
-                <i class="fas fa-filter"></i> Filtros de Búsqueda
-                <button class="btn btn-sm btn-outline-secondary ms-2" type="button" 
+                <i class="fas fa-filter me-2"></i> Filtros de Búsqueda
+                <button class="btn btn-sm btn-outline-secondary ms-2" type="button"
                         data-bs-toggle="collapse" data-bs-target="#filtrosCollapse">
                     <i class="fas fa-chevron-down"></i>
                 </button>
@@ -137,10 +160,10 @@
     </div>
     
     <!-- Tabla de recibos -->
-    <div class="card">
-        <div class="card-header d-flex justify-content-between align-items-center">
+    <div class="card border-0 shadow-sm">
+        <div class="card-header bg-white border-bottom d-flex justify-content-between align-items-center">
             <h5 class="mb-0">
-                <i class="fas fa-table"></i> Tabla de Recibos
+                <i class="fas fa-table me-2"></i> Tabla de Recibos
                 {% if form_filtros.is_bound %}
                 <small class="text-muted">(Filtrados)</small>
                 {% endif %}
@@ -154,12 +177,12 @@
                 </button>
             </div>
         </div>
-        
-        <div class="card-body">
+
+        <div class="card-body p-0">
             {% if recibos %}
             <div class="table-responsive" id="tableView">
-                <table class="table table-striped table-hover table-fixed">
-                    <thead class="table-dark">
+                <table class="table table-hover mb-0 table-fixed">
+                    <thead class="table-light">
                         <tr>
                             <th width="60">#</th>
                             <th width="80">Vista Previa</th>
@@ -267,10 +290,10 @@
             </div>
             
             <!-- Vista de tarjetas -->
-            <div class="row d-none" id="cardsView">
+            <div class="row d-none p-3" id="cardsView">
                 {% for recibo in recibos %}
                 <div class="col-md-4 col-lg-3 mb-4">
-                    <div class="card h-100">
+                    <div class="card border-0 shadow-sm h-100">
                         {% if recibo.imagen_recibo %}
                         <img src="{{ recibo.imagen_recibo.url }}" 
                              class="card-img-top" 
@@ -312,10 +335,10 @@
             </div>
             
             {% else %}
-            <div class="text-center py-5">
-                <i class="fas fa-search fa-3x text-muted mb-3"></i>
-                <h5 class="text-muted">No se encontraron recibos</h5>
-                <p class="text-muted">
+            <div class="text-center p-5">
+                <i class="fas fa-search fa-4x text-muted mb-3 d-block"></i>
+                <h4 class="text-muted">No se encontraron recibos</h4>
+                <p class="text-muted mb-3">
                     {% if form_filtros.is_bound %}
                         Intenta ajustar los filtros de búsqueda
                     {% else %}
@@ -323,12 +346,12 @@
                     {% endif %}
                 </p>
                 {% if form_filtros.is_bound %}
-                <a href="{% url 'separador_recibos:tabla_recibos' %}" class="btn btn-outline-secondary">
-                    <i class="fas fa-times"></i> Limpiar Filtros
+                <a href="{% url 'separador_recibos:tabla_recibos' %}" class="btn btn-outline-secondary mt-3">
+                    <i class="fas fa-times me-1"></i> Limpiar Filtros
                 </a>
                 {% else %}
-                <a href="{% url 'separador_recibos:upload_pdf' %}" class="btn btn-primary">
-                    <i class="fas fa-upload"></i> Subir PDF
+                <a href="{% url 'separador_recibos:upload_pdf' %}" class="btn btn-primary mt-3">
+                    <i class="fas fa-upload me-1"></i> Subir PDF
                 </a>
                 {% endif %}
             </div>

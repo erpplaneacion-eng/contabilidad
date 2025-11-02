@@ -29,10 +29,10 @@
             <div class="row">
                 <!-- Imagen del recibo -->
                 <div class="col-md-6">
-                    <div class="card">
-                        <div class="card-header">
+                    <div class="card border-0 shadow-sm">
+                        <div class="card-header bg-white border-bottom">
                             <h5 class="mb-0">
-                                <i class="fas fa-image"></i> Vista del Recibo
+                                <i class="fas fa-image me-2"></i> Vista del Recibo
                                 {% if recibo.validado %}
                                     <span class="badge bg-success ms-2">Validado</span>
                                 {% else %}
@@ -69,10 +69,10 @@
 
                 <!-- Información del recibo -->
                 <div class="col-md-6">
-                    <div class="card">
-                        <div class="card-header">
+                    <div class="card border-0 shadow-sm">
+                        <div class="card-header bg-white border-bottom">
                             <h5 class="mb-0">
-                                <i class="fas fa-info-circle"></i> Información Extraída
+                                <i class="fas fa-info-circle me-2"></i> Información Extraída
                             </h5>
                         </div>
                         <div class="card-body">
@@ -197,10 +197,10 @@
                     </div>
 
                     <!-- Información técnica -->
-                    <div class="card mt-3">
-                        <div class="card-header">
+                    <div class="card border-0 shadow-sm mt-3">
+                        <div class="card-header bg-white border-bottom">
                             <h6 class="mb-0">
-                                <i class="fas fa-cog"></i> Información Técnica
+                                <i class="fas fa-cog me-2"></i> Información Técnica
                             </h6>
                         </div>
                         <div class="card-body">
@@ -246,10 +246,10 @@
 
             <!-- Texto extraído si está disponible -->
             {% if recibo.texto_extraido %}
-            <div class="card mt-4">
-                <div class="card-header">
+            <div class="card border-0 shadow-sm mt-4">
+                <div class="card-header bg-white border-bottom">
                     <h5 class="mb-0">
-                        <i class="fas fa-text-width"></i> Texto Extraído
+                        <i class="fas fa-text-width me-2"></i> Texto Extraído
                     </h5>
                 </div>
                 <div class="card-body">
@@ -261,9 +261,11 @@
             {% endif %}
 
             <!-- Acciones -->
-            <div class="card mt-4">
-                <div class="card-header">
-                    <h6 class="mb-0">Acciones Disponibles</h6>
+            <div class="card border-0 shadow-sm mt-4">
+                <div class="card-header bg-white border-bottom">
+                    <h6 class="mb-0">
+                        <i class="fas fa-tasks me-2"></i> Acciones Disponibles
+                    </h6>
                 </div>
                 <div class="card-body">
                     <div class="row">

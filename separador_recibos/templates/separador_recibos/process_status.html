@@ -4,10 +4,10 @@
 <div class="container-fluid">
     <div class="row">
         <div class="col-md-8 offset-md-2">
-            <div class="card">
-                <div class="card-header">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white border-bottom">
                     <h5 class="mb-0">
-                        <i class="fas fa-cog fa-spin" id="processingIcon"></i>
+                        <i class="fas fa-cog fa-spin me-2" id="processingIcon"></i>
                         Estado del Procesamiento
                     </h5>
                 </div>
@@ -105,17 +105,17 @@
             
             <!-- Vista previa de recibos si ya están disponibles -->
             {% if recibos and procesamiento.estado == 'COMPLETADO' %}
-            <div class="card mt-4">
-                <div class="card-header">
+            <div class="card border-0 shadow-sm mt-4">
+                <div class="card-header bg-white border-bottom">
                     <h6 class="mb-0">
-                        <i class="fas fa-images"></i> Vista Previa de Recibos Detectados ({{ recibos|length }})
+                        <i class="fas fa-images me-2"></i> Vista Previa de Recibos Detectados ({{ recibos|length }})
                     </h6>
                 </div>
                 <div class="card-body">
                     <div class="row">
                         {% for recibo in recibos|slice:":6" %}
                         <div class="col-md-4 mb-3">
-                            <div class="card">
+                            <div class="card border-0 shadow-sm">
                                 {% if recibo.imagen_recibo %}
                                 <img src="{{ recibo.imagen_recibo.url }}" 
                                      class="card-img-top" 
@@ -156,10 +156,10 @@
             {% endif %}
             
             <!-- Información adicional -->
-            <div class="card mt-4">
-                <div class="card-header">
+            <div class="card border-0 shadow-sm mt-4">
+                <div class="card-header bg-white border-bottom">
                     <h6 class="mb-0">
-                        <i class="fas fa-info-circle"></i> Información del Procesamiento
+                        <i class="fas fa-info-circle me-2"></i> Información del Procesamiento
                     </h6>
                 </div>
                 <div class="card-body">

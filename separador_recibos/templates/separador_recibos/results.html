@@ -30,50 +30,74 @@
             </div>
 
             <!-- Estadísticas del procesamiento -->
-            <div class="row mb-4">
+            <div class="row g-3 mb-4">
                 <div class="col-md-3">
-                    <div class="card text-white bg-success">
-                        <div class="card-body text-center">
-                            <i class="fas fa-file-pdf fa-2x mb-2"></i>
-                            <h3>{{ procesamiento.total_recibos }}</h3>
-                            <p class="mb-0">Recibos Detectados</p>
+                    <div class="card border-0 shadow-sm" style="border-left: 4px solid #198754 !important;">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <p class="text-muted mb-1 small">Recibos Detectados</p>
+                                    <h3 class="mb-0">{{ procesamiento.total_recibos }}</h3>
+                                </div>
+                                <div class="fs-2 text-success opacity-50">
+                                    <i class="fas fa-file-pdf"></i>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
                 <div class="col-md-3">
-                    <div class="card text-white bg-info">
-                        <div class="card-body text-center">
-                            <i class="fas fa-dollar-sign fa-2x mb-2"></i>
-                            <h3>${{ total_valor|floatformat:0|default:"0" }}</h3>
-                            <p class="mb-0">Valor Total</p>
+                    <div class="card border-0 shadow-sm" style="border-left: 4px solid #0dcaf0 !important;">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <p class="text-muted mb-1 small">Valor Total</p>
+                                    <h3 class="mb-0">${{ total_valor|floatformat:0|default:"0" }}</h3>
+                                </div>
+                                <div class="fs-2 text-info opacity-50">
+                                    <i class="fas fa-dollar-sign"></i>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
                 <div class="col-md-3">
-                    <div class="card text-white bg-warning">
-                        <div class="card-body text-center">
-                            <i class="fas fa-clock fa-2x mb-2"></i>
-                            <h3>{{ procesamiento.fecha_subida|date:"d/m/Y" }}</h3>
-                            <p class="mb-0">Fecha Procesamiento</p>
+                    <div class="card border-0 shadow-sm" style="border-left: 4px solid #ffc107 !important;">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <p class="text-muted mb-1 small">Fecha Procesamiento</p>
+                                    <h3 class="mb-0 small">{{ procesamiento.fecha_subida|date:"d/m/Y" }}</h3>
+                                </div>
+                                <div class="fs-2 text-warning opacity-50">
+                                    <i class="fas fa-clock"></i>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
                 <div class="col-md-3">
-                    <div class="card text-white bg-primary">
-                        <div class="card-body text-center">
-                            <i class="fas fa-check fa-2x mb-2"></i>
-                            <h3>{{ recibos|length }}</h3>
-                            <p class="mb-0">En Base de Datos</p>
+                    <div class="card border-0 shadow-sm" style="border-left: 4px solid #0d6efd !important;">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <p class="text-muted mb-1 small">En Base de Datos</p>
+                                    <h3 class="mb-0">{{ recibos|length }}</h3>
+                                </div>
+                                <div class="fs-2 text-primary opacity-50">
+                                    <i class="fas fa-check"></i>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
 
             <!-- Resumen de entidades bancarias -->
-            <div class="card mb-4">
-                <div class="card-header">
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-header bg-white border-bottom">
                     <h5 class="mb-0">
-                        <i class="fas fa-university"></i> Distribución por Entidades Bancarias
+                        <i class="fas fa-university me-2"></i> Distribución por Entidades Bancarias
                     </h5>
                 </div>
                 <div class="card-body">
@@ -106,10 +130,10 @@
             </div>
 
             <!-- Galería de recibos -->
-            <div class="card">
-                <div class="card-header d-flex justify-content-between align-items-center">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white border-bottom d-flex justify-content-between align-items-center">
                     <h5 class="mb-0">
-                        <i class="fas fa-images"></i> Galería de Recibos ({{ recibos|length }})
+                        <i class="fas fa-images me-2"></i> Galería de Recibos ({{ recibos|length }})
                     </h5>
                     <div class="btn-group btn-group-sm" role="group">
                         <input type="checkbox" class="btn-check" id="selectAll">
@@ -128,7 +152,7 @@
                     <div class="row">
                         {% for recibo in recibos %}
                         <div class="col-md-4 col-lg-3 mb-4">
-                            <div class="card h-100">
+                            <div class="card border-0 shadow-sm h-100">
                                 <div class="position-relative">
                                     {% if recibo.imagen_recibo %}
                                     <img src="{{ recibo.imagen_recibo.url }}" 
@@ -201,9 +225,9 @@
                         {% endfor %}
                     </div>
                     {% else %}
-                    <div class="text-center py-5">
-                        <i class="fas fa-search fa-3x text-muted mb-3"></i>
-                        <h5 class="text-muted">No se encontraron recibos</h5>
+                    <div class="text-center p-5">
+                        <i class="fas fa-search fa-4x text-muted mb-3 d-block"></i>
+                        <h4 class="text-muted">No se encontraron recibos</h4>
                         <p class="text-muted">No hay recibos disponibles para mostrar.</p>
                     </div>
                     {% endif %}
