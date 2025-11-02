@@ -193,22 +193,35 @@
             <div class="card border-0 shadow-sm">
                 <div class="card-header bg-white border-bottom">
                     <h5 class="mb-0">
-                        <i class="fas fa-university me-2"></i> Top Entidades
+                        <i class="fas fa-university me-2"></i> Top Entidades Bancarias
                     </h5>
                 </div>
                 <div class="card-body">
-                    {% if top_entidades %}
+                    {% if entidades_stats %}
                     <div class="list-group list-group-flush">
-                        {% for entidad in top_entidades %}
-                        <div class="list-group-item px-0 d-flex justify-content-between align-items-center">
-                            <div>
-                                <strong>{{ entidad.entidad_bancaria|default:"Sin especificar" }}</strong>
-                                <br>
-                                <small class="text-muted">
-                                    Valor: ${{ entidad.valor_total|floatformat:0|default:"0" }}
-                                </small>
+                        {% for entidad in entidades_stats %}
+                        <div class="list-group-item d-flex justify-content-between align-items-center" style="padding-left: 0; padding-right: 0;">
+                            <div class="d-flex align-items-start w-100">
+                                <div class="me-3">
+                                    <span class="badge bg-primary rounded-circle" style="width: 30px; height: 30px; display: flex; align-items: center; justify-content: center;">
+                                        {{ forloop.counter }}
+                                    </span>
+                                </div>
+                                <div class="flex-grow-1">
+                                    <h6 class="mb-1">{{ entidad.entidad_bancaria|default:"Sin especificar" }}</h6>
+                                    <small class="text-muted">
+                                        {{ entidad.total_recibos }} recibo{{ entidad.total_recibos|pluralize }}
+                                    </small>
+                                </div>
+                                <div class="text-end">
+                                    <div class="fw-bold">${{ entidad.valor_total|floatformat:0|default:"0" }}</div>
+                                    <div class="progress mt-1" style="height: 4px; width: 60px;">
+                                        {% widthratio entidad.valor_total valor_total 100 as percentage %}
+                                        <div class="progress-bar bg-primary" role="progressbar"
+                                             style="width: {{ percentage }}%"></div>
+                                    </div>
+                                </div>
                             </div>
-                            <span class="badge bg-primary rounded-pill">{{ entidad.total }}</span>
                         </div>
                         {% endfor %}
                     </div>
