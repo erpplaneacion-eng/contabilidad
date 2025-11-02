@@ -23,4 +23,5 @@ urlpatterns = [
     
     # URLs de exportación
     path('exportar/', views.exportar_recibos, name='exportar_recibos'),
+    path('exportar-imagenes/', views.exportar_imagenes_seleccionadas, name='exportar_imagenes_seleccionadas'),
 ]

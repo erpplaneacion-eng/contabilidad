@@ -11,6 +11,7 @@ from django.core.files.base import ContentFile
 import os
 import io
 import logging
+import zipfile
 from .models import ProcesamientoRecibo, ReciboDetectado
 from .forms import PDFUploadForm, FiltrosRecibosForm
 from .utils.pdf_processor import PDFProcessor
@@ -563,6 +564,41 @@ def exportar_recibos(request):
     except Exception as e:
         logger.error(f"Error exportando recibos: {str(e)}")
         return HttpResponse(f"Error exportando: {str(e)}", status=500)
-    
-    
-    
+
+
+@login_required
+def exportar_imagenes_seleccionadas(request):
+    """
+    Exporta las imágenes de los recibos seleccionados como un archivo ZIP.
+    """
+    if request.method != 'POST':
+        return JsonResponse({'error': 'Método no permitido'}, status=405)
+
+    recibo_ids = request.POST.getlist('recibo_ids')
+
+    if not recibo_ids:
+        return JsonResponse({'error': 'No se seleccionaron recibos'}, status=400)
+
+    recibos = ReciboDetectado.objects.filter(
+        id__in=recibo_ids,
+        procesamiento__usuario=request.user
+    )
+
+    # Crear un archivo ZIP en memoria
+    zip_buffer = io.BytesIO()
+    with zipfile.ZipFile(zip_buffer, 'w', zipfile.ZIP_DEFLATED) as zip_file:
+        for recibo in recibos:
+            if recibo.imagen_recibo:
+                try:
+                    # Obtener el nombre del archivo de la imagen
+                    file_name = os.path.basename(recibo.imagen_recibo.name)
+                    # Escribir la imagen en el ZIP
+                    zip_file.writestr(file_name, recibo.imagen_recibo.read())
+                except FileNotFoundError:
+                    logger.warning(f"No se encontró el archivo de imagen para el recibo {recibo.id}")
+
+    zip_buffer.seek(0)
+
+    response = HttpResponse(zip_buffer, content_type='application/zip')
+    response['Content-Disposition'] = f'attachment; filename="recibos_seleccionados_{timezone.now().strftime("%Y%m%d_%H%M%S")}.zip"'
+    return response
