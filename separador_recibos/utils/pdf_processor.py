@@ -6,6 +6,7 @@ import re
 import logging
 from typing import List, Dict, Tuple
 from decimal import Decimal, InvalidOperation
+from datetime import datetime
 
 logger = logging.getLogger(__name__)
 
@@ -186,43 +187,31 @@ class PDFProcessor:
         
         # Patrones para extraer información
         patrones = {
-            'valor': r'(\d{1,3}(?:\.\d{3})*(?:,\d{2})?)',
-            'referencia': r'([A-Z]{2,}\d{10,})',
-            'documento': r'DA\d+',
-            'beneficiario': r'([A-ZÁÉÍÓÚÑÜ][a-záéíóúñü]+\s+[A-ZÁÉÍÓÚÑÜ][a-záéíóúñü]+(?:\s+[A-ZÁÉÍÓÚÑÜ][a-záéíóúñü]+)*)'
+            'valor': r'Valor:\s*([\d.,]+)',
+            'referencia': r'Referencia:\s*(\w+)',
+            'documento': r'Documento:\s*(\d+)',
+            'beneficiario': r'Nombre de beneficiario:\s*([A-ZÁÉÍÓÚÑÜ\s]+,)',
+            'numero_cuenta': r'Número de cuenta:\s*([\d-]+)',
+            'tipo_cuenta': r'Tipo de cuenta:\s*(\w+)',
+            'fecha_aplicacion': r'Fecha de aplicación:\s*(\d{1,2}\s+de\s+\w+\s+de\s+\d{4})',
+            'concepto': r'Concepto:\s*(\w+)',
+            'estado': r'Estado:\s*(PAGO EXITOSO Y ABONADO[\w\s]+)'
         }
         
-        # Extraer valor (buscar el más grande que parezca una cantidad)
-        valores = re.findall(patrones['valor'], texto)
-        if valores:
-            try:
-                # Tomar el valor más alto que parezca razonable
-                valor_max = max([self._limpiar_valor(v) for v in valores if self._limpiar_valor(v) > 1000])
-                info['valor'] = valor_max
-            except:
-                pass
-        
-        # Extraer referencia
-        referencias = re.findall(patrones['referencia'], texto)
-        if referencias:
-            info['referencia'] = referencias[0]
-        
-        # Extraer documento
-        documentos = re.findall(patrones['documento'], texto)
-        if documentos:
-            info['documento'] = documentos[0]
-        
-        # Extraer beneficiario (buscar nombres después de patrones conocidos)
-        beneficiarios = re.findall(patrones['beneficiario'], texto)
-        if beneficiarios:
-            # Filtrar nombres que no parezcan ser entidades bancarias
-            nombres_validos = [b for b in beneficiarios if not self._es_entidad_bancaria(b)]
-            if nombres_validos:
-                info['beneficiario'] = nombres_validos[0]
-        
-        # Extraer entidad bancaria
-        # IMPORTANTE: Ordenadas de más específica a menos específica para evitar falsos positivos
-        # Por ejemplo, "BANCO CAJA SOCIAL" debe ir antes de "BANCO" para que no se detecte solo "BANCO"
+        for campo, patron in patrones.items():
+            match = re.search(patron, texto, re.IGNORECASE)
+            if match:
+                valor_extraido = match.group(1).strip()
+                if campo == 'valor':
+                    info[campo] = self._limpiar_valor(valor_extraido)
+                elif campo == 'beneficiario':
+                    info[campo] = valor_extraido.rstrip(',')
+                elif campo == 'fecha_aplicacion':
+                    info['fecha'] = self._limpiar_fecha(valor_extraido)
+                else:
+                    info[campo] = valor_extraido
+
+        # Extracción de la entidad bancaria (lógica especial)
         entidades = [
             'BANCO CAJA SOCIAL',
             'BANCO DE BOGOTA',
@@ -232,28 +221,12 @@ class PDFProcessor:
             'DAVIPLATA',
             'NEQUI',
         ]
-
         texto_upper = texto.upper()
         for entidad in entidades:
             if entidad in texto_upper:
                 info['entidad'] = entidad
                 break
-        
-        # Extraer concepto
-        if 'PAGO' in texto.upper():
-            info['concepto'] = 'PAGO'
-        elif 'PAGOS' in texto.upper():
-            info['concepto'] = 'PAGOS'
-        
-        # Extraer estado
-        if 'PAGO EXITOSO' in texto.upper():
-            info['estado'] = 'PAGO EXITOSO Y ABONADO'
-        
-        # Extraer fecha (27 de Octubre de 2025)
-        fechas = re.findall(r'(\d{1,2}\s+de\s+\w+\s+de\s+\d{4})', texto, re.IGNORECASE)
-        if fechas:
-            info['fecha_str'] = fechas[0]
-        
+
         return info
     
     def _limpiar_valor(self, valor_str: str) -> Decimal:
@@ -264,6 +237,21 @@ class PDFProcessor:
             return Decimal(valor_limpio)
         except (InvalidOperation, ValueError):
             return Decimal('0')
+
+    def _limpiar_fecha(self, fecha_str: str):
+        """Convierte string de fecha a objeto date"""
+        meses = {
+            'enero': 1, 'febrero': 2, 'marzo': 3, 'abril': 4, 'mayo': 5, 'junio': 6,
+            'julio': 7, 'agosto': 8, 'septiembre': 9, 'octubre': 10, 'noviembre': 11, 'diciembre': 12
+        }
+        try:
+            partes = fecha_str.lower().split(' de ')
+            dia = int(partes[0])
+            mes = meses[partes[1]]
+            año = int(partes[2])
+            return datetime(año, mes, dia).date()
+        except (ValueError, KeyError, IndexError):
+            return None
     
     def _es_entidad_bancaria(self, texto: str) -> bool:
         """Verifica si el texto es el nombre de una entidad bancaria"""

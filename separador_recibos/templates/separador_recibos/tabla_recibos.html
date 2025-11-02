@@ -168,6 +168,8 @@
                             <th width="150">Entidad</th>
                             <th width="120">Cuenta</th>
                             <th width="120">Referencia</th>
+                            <th width="120">Documento</th>
+                            <th width="100">Tipo Cuenta</th>
                             <th width="100">Fecha</th>
                             <th width="100">Estado</th>
                             <th width="80">Validado</th>
@@ -217,6 +219,13 @@
                                     {{ recibo.referencia|default:"N/A" }}
                                 </div>
                             </td>
+                            <td>
+                                <div class="text-truncate" style="max-width: 100px;" 
+                                     title="{{ recibo.documento|default:'N/A' }}">
+                                    {{ recibo.documento|default:"N/A" }}
+                                </div>
+                            </td>
+                            <td>{{ recibo.tipo_cuenta|default:"N/A" }}</td>
                             <td>
                                 {% if recibo.fecha_aplicacion %}
                                     {{ recibo.fecha_aplicacion|date:"d/m/Y" }}
