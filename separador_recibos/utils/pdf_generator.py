@@ -6,7 +6,7 @@ from reportlab.lib.pagesizes import LETTER
 from reportlab.lib.units import inch, cm
 from reportlab.lib.colors import black, blue, green
 from reportlab.lib.styles import getSampleStyleSheet
-from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Image as RLImage
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Image as RLImage, PageBreak
 from reportlab.lib.enums import TA_LEFT, TA_CENTER
 import io
 import os
@@ -27,11 +27,12 @@ class PDFGenerator:
     
     def generar_pdf_con_imagenes(self, recibos_data: List[Dict], imagenes_data: List[Dict]) -> str:
         """
-        Genera PDF con cada recibo como página individual usando las imágenes extraídas
+        Genera PDF con cada recibo en su propia página individual usando las imágenes extraídas
+        Cada página contiene: Título del recibo + Información + Imagen
         """
         try:
-            logger.info(f"Generando PDF con {len(recibos_data)} recibos")
-            
+            logger.info(f"Generando PDF con {len(recibos_data)} recibos (1 recibo por página)")
+
             # Crear documento PDF
             doc = SimpleDocTemplate(
                 self.output_path,
@@ -41,37 +42,25 @@ class PDFGenerator:
                 topMargin=self.margin,
                 bottomMargin=self.margin
             )
-            
+
             # Lista para almacenar elementos del PDF
             story = []
             styles = getSampleStyleSheet()
-            
-            # Título principal
-            title_style = styles['Title']
-            title_style.alignment = TA_CENTER
-            title_style.textColor = blue
-            
-            story.append(Paragraph("Recibos Separados", title_style))
-            story.append(Spacer(1, 0.5 * inch))
-            
+
             # Procesar cada recibo
             for i, (recibo_data, imagen_data) in enumerate(zip(recibos_data, imagenes_data)):
-                if i > 0:  # Nueva página para cada recibo después del primero
-                    story.append(Spacer(1, 1 * inch))
-                    # Agregar separador de página
-                    story.append(Paragraph("_" * 80, styles['Normal']))
-                    story.append(Spacer(1, 0.5 * inch))
-                
                 # Título del recibo
                 recibo_title_style = styles['Heading1']
                 recibo_title_style.textColor = green
+                recibo_title_style.alignment = TA_CENTER
                 story.append(Paragraph(f"Recibo #{recibo_data.get('numero_secuencial', i + 1)}", recibo_title_style))
-                story.append(Spacer(1, 0.3 * inch))
-                
+                story.append(Spacer(1, 0.2 * inch))
+
                 # Información del recibo
                 info_style = styles['Normal']
-                info_style.fontSize = 10
-                
+                info_style.fontSize = 11
+                info_style.leading = 14
+
                 # Crear información del recibo
                 info_fields = [
                     f"<b>Beneficiario:</b> {recibo_data.get('nombre_beneficiario', 'N/A')}",
@@ -83,53 +72,57 @@ class PDFGenerator:
                     f"<b>Estado:</b> {recibo_data.get('estado_pago', 'N/A')}",
                     f"<b>Concepto:</b> {recibo_data.get('concepto', 'N/A')}"
                 ]
-                
+
                 for field in info_fields:
                     story.append(Paragraph(field, info_style))
-                    story.append(Spacer(1, 0.1 * inch))
-                
-                story.append(Spacer(1, 0.3 * inch))
-                
+                    story.append(Spacer(1, 0.08 * inch))
+
+                story.append(Spacer(1, 0.25 * inch))
+
                 # Agregar imagen del recibo
                 if imagen_data and imagen_data.get('imagen_data'):
                     try:
                         # Crear imagen desde datos
                         img = self._crear_imagen_desde_data(imagen_data['imagen_data'])
-                        
-                        # Calcular dimensiones optimizadas
+
+                        # Calcular dimensiones optimizadas para que quepa en la página
+                        # Espacio disponible: altura total - espacio usado por título e información
+                        # Aproximadamente: 792 - 72 (márgenes top/bottom) - 150 (info) = 570 puntos
                         max_width = self.width - (2 * self.margin)
-                        max_height = self.height * 0.5  # 50% de la altura de la página
-                        
+                        max_height = 4.5 * inch  # Espacio seguro para la imagen
+
                         # Escalar imagen manteniendo proporción
                         img_width, img_height = img.size
                         scale = min(max_width / img_width, max_height / img_height)
-                        
+
                         final_width = img_width * scale
                         final_height = img_height * scale
-                        
+
                         # Agregar imagen al PDF
                         img_buffer = io.BytesIO()
                         img.save(img_buffer, format='PNG')
                         img_buffer.seek(0)
-                        
+
                         rl_image = RLImage(img_buffer, width=final_width, height=final_height)
                         story.append(rl_image)
-                        
+
                     except Exception as e:
                         logger.error(f"Error agregando imagen del recibo {i + 1}: {str(e)}")
                         error_msg = f"<i>Error cargando imagen: {str(e)}</i>"
                         story.append(Paragraph(error_msg, info_style))
                 else:
                     story.append(Paragraph("<i>Imagen no disponible</i>", info_style))
-                
-                story.append(Spacer(1, 0.3 * inch))
-            
+
+                # Forzar salto de página después de cada recibo (excepto el último)
+                if i < len(recibos_data) - 1:
+                    story.append(PageBreak())
+
             # Construir PDF
             doc.build(story)
-            
+
             logger.info(f"PDF generado exitosamente en: {self.output_path}")
             return self.output_path
-            
+
         except Exception as e:
             logger.error(f"Error generando PDF: {str(e)}")
             raise

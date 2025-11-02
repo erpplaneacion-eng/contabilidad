@@ -87,7 +87,7 @@
                                 </a>
                                 <a href="{% url 'separador_recibos:results' procesamiento.id %}"
                                    class="btn btn-primary">
-                                    <i class="fas fa-eye"></i> Ver Resultados
+                                    <i class="fas fa-images"></i> Ver Todos los Recibos ({{ procesamiento.total_recibos }})
                                 </a>
                             {% elif procesamiento.estado == 'PROCESANDO' %}
                                 <button class="btn btn-primary" disabled>
@@ -151,14 +151,6 @@
                         </div>
                         {% endfor %}
                     </div>
-                    
-                    {% if recibos|length > 6 %}
-                    <div class="text-center mt-3">
-                        <a href="{% url 'separador_recibos:results' procesamiento.id %}" class="btn btn-primary">
-                            <i class="fas fa-th"></i> Ver Todos ({{ recibos|length }})
-                        </a>
-                    </div>
-                    {% endif %}
                 </div>
             </div>
             {% endif %}

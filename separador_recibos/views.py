@@ -12,7 +12,7 @@ import os
 import io
 import logging
 from .models import ProcesamientoRecibo, ReciboDetectado
-from .forms import PDFUploadForm, FiltrosRecibosForm, EditarReciboForm
+from .forms import PDFUploadForm, FiltrosRecibosForm
 from .utils.pdf_processor import PDFProcessor
 from .utils.image_extractor import ImageExtractor
 from .utils.pdf_generator import PDFGenerator
@@ -416,32 +416,6 @@ def ver_recibo(request, recibo_id):
     }
     
     return render(request, 'separador_recibos/recibo_detail.html', context)
-
-
-@login_required
-def editar_recibo(request, recibo_id):
-    """Vista para editar información de un recibo"""
-    recibo = get_object_or_404(
-        ReciboDetectado, 
-        id=recibo_id,
-        procesamiento__usuario=request.user
-    )
-    
-    if request.method == 'POST':
-        form = EditarReciboForm(request.POST, instance=recibo)
-        if form.is_valid():
-            form.save()
-            return redirect('separador_recibos:ver_recibo', recibo_id=recibo.id)
-    else:
-        form = EditarReciboForm(instance=recibo)
-    
-    context = {
-        'form': form,
-        'recibo': recibo,
-        'titulo': f'Editar Recibo #{recibo.numero_secuencial}'
-    }
-    
-    return render(request, 'separador_recibos/editar_recibo.html', context)
 
 
 @login_required

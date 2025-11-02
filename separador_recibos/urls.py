@@ -16,7 +16,6 @@ urlpatterns = [
     
     # URLs de recibos individuales
     path('recibo/<uuid:recibo_id>/', views.ver_recibo, name='ver_recibo'),
-    path('recibo/<uuid:recibo_id>/editar/', views.editar_recibo, name='editar_recibo'),
     path('recibo/<uuid:recibo_id>/imagen/', views.descargar_imagen, name='descargar_imagen'),
     
     # URLs AJAX

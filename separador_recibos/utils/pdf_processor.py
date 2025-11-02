@@ -221,10 +221,21 @@ class PDFProcessor:
                 info['beneficiario'] = nombres_validos[0]
         
         # Extraer entidad bancaria
-        entidades = ['BANCOLOMBIA', 'BANCO CAJA SOCIAL', 'NEQUI', 'DAVIPLATA', 
-                    'BANCO DE BOGOTA', 'BANCO FALABELLA', 'BANCO BBVA']
+        # IMPORTANTE: Ordenadas de más específica a menos específica para evitar falsos positivos
+        # Por ejemplo, "BANCO CAJA SOCIAL" debe ir antes de "BANCO" para que no se detecte solo "BANCO"
+        entidades = [
+            'BANCO CAJA SOCIAL',
+            'BANCO DE BOGOTA',
+            'BANCO FALABELLA',
+            'BANCO BBVA',
+            'BANCOLOMBIA',
+            'DAVIPLATA',
+            'NEQUI',
+        ]
+
+        texto_upper = texto.upper()
         for entidad in entidades:
-            if entidad in texto.upper():
+            if entidad in texto_upper:
                 info['entidad'] = entidad
                 break
         
@@ -256,8 +267,16 @@ class PDFProcessor:
     
     def _es_entidad_bancaria(self, texto: str) -> bool:
         """Verifica si el texto es el nombre de una entidad bancaria"""
-        entidades = ['BANCOLOMBIA', 'BANCO', 'CAJA SOCIAL', 'NEQUI', 'DAVIPLATA', 
-                    'FALABELLA', 'BBVA']
+        entidades = [
+            'BANCO CAJA SOCIAL',
+            'BANCO DE BOGOTA',
+            'BANCO FALABELLA',
+            'BANCO BBVA',
+            'BANCOLOMBIA',
+            'DAVIPLATA',
+            'NEQUI',
+            'BANCO',  # Genérico al final para no causar falsos positivos
+        ]
         texto_upper = texto.upper()
         return any(entidad in texto_upper for entidad in entidades)
     
