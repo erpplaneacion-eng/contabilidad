@@ -23,7 +23,48 @@ class ProcesamientoRecibo(models.Model):
     total_recibos = models.PositiveIntegerField(default=0)
     archivo_resultado = models.FileField(upload_to='pdfs_procesados/', null=True, blank=True)
     mensaje_error = models.TextField(blank=True, null=True)
-    
+
+    # Configuración de procesamiento (valores fijos de alta calidad)
+    calidad_imagen = models.CharField(
+        max_length=10,
+        choices=[
+            ('baja', 'Baja'),
+            ('media', 'Media'),
+            ('alta', 'Alta')
+        ],
+        default='alta',
+        help_text='Calidad de extracción de imágenes'
+    )
+    tamaño_imagen = models.CharField(
+        max_length=10,
+        choices=[
+            ('pequeña', 'Pequeña'),
+            ('mediana', 'Mediana'),
+            ('grande', 'Grande')
+        ],
+        default='grande',
+        help_text='Tamaño de las imágenes extraídas'
+    )
+    formato_salida = models.CharField(
+        max_length=20,
+        choices=[
+            ('pdf_imagenes', 'PDF con imágenes'),
+            ('pdf_texto', 'PDF solo texto'),
+            ('ambos', 'Ambos formatos')
+        ],
+        default='pdf_imagenes',
+        help_text='Formato del archivo de salida'
+    )
+    extraer_imagenes = models.BooleanField(
+        default=True,
+        help_text='Extraer imágenes de alta calidad de cada recibo'
+    )
+    generar_reporte = models.BooleanField(
+        default=True,
+        help_text='Generar reporte con estadísticas'
+    )
+    archivo_reporte = models.FileField(upload_to='pdfs_procesados/', null=True, blank=True)
+
     def __str__(self):
         return f"Procesamiento {self.id} - {self.usuario.username}"
 

@@ -17,43 +17,43 @@ class ImageExtractor:
     def __init__(self, pdf_path: str):
         self.pdf_path = pdf_path
     
-    def extraer_imagen_recibo(self, coordenadas: Dict, output_size: Tuple[int, int] = (600, 800), calidad_imagen: str = 'media') -> Image.Image:
+    def extraer_imagen_recibo(self, coordenadas: Dict, tamaño_imagen: str = 'mediana', calidad_imagen: str = 'media') -> Image.Image:
         """
         Extrae el pantallazo visual de cada recibo usando coordenadas
-        
+
         Args:
             coordenadas: Diccionario con coordenadas del recibo
-            output_size: Tamaño de salida de la imagen
+            tamaño_imagen: Tamaño de salida ('pequeña', 'mediana', 'grande')
             calidad_imagen: Calidad de extracción ('baja', 'media', 'alta')
         """
         try:
-            logger.info(f"Extrayendo imagen de recibo - Coordenadas: {coordenadas}, Calidad: {calidad_imagen}")
-            
+            logger.info(f"Extrayendo imagen de recibo - Coordenadas: {coordenadas}, Calidad: {calidad_imagen}, Tamaño: {tamaño_imagen}")
+
             doc = fitz.open(self.pdf_path)
             pagina_num = coordenadas['pagina'] - 1  # 0-indexed
-            
+
             if pagina_num >= len(doc):
                 raise ValueError(f"Página {pagina_num + 1} no existe en el PDF")
-            
+
             page = doc[pagina_num]
-            
+
             # Definir rectángulo basado en coordenadas detectadas
             x = coordenadas.get('x', 0)
             y = coordenadas.get('y', 0)
             width = coordenadas.get('width', 612)  # Letter (Carta) width por defecto (8.5 pulgadas = 612 puntos)
             height = coordenadas.get('height', 800)  # Altura estimada
-            
+
             # Asegurar que las coordenadas estén dentro de los límites de la página
             page_width = page.rect.width
             page_height = page.rect.height
-            
+
             x = max(0, min(x, page_width - 10))
             y = max(0, min(y, page_height - 10))
             width = min(width, page_width - x)
             height = min(height, page_height - y)
-            
+
             rect = fitz.Rect(x, y, x + width, y + height)
-            
+
             # Determinar factor de escala según calidad
             # Factor de escala afecta la resolución del pixmap
             factores_escala = {
@@ -62,24 +62,31 @@ class ImageExtractor:
                 'alta': 3.0    # Más lento, mayor resolución
             }
             escala = factores_escala.get(calidad_imagen.lower(), 2.0)
-            
+
             logger.info(f"  Factor de escala: {escala}x para calidad {calidad_imagen}")
-            
+
             # Extraer como imagen con calidad ajustada
             mat = fitz.Matrix(escala, escala)
             pix = page.get_pixmap(matrix=mat, clip=rect)
-            
+
             # Convertir a PIL Image
             img_data = pix.tobytes("png")
             img = Image.open(io.BytesIO(img_data))
-            
-            # Redimensionar si es necesario
-            if output_size:
-                img = self._redimensionar_imagen(img, output_size)
-            
+
+            # Determinar tamaño de salida según configuración
+            tamaños_salida = {
+                'pequeña': (300, 400),
+                'mediana': (600, 800),
+                'grande': (900, 1200)
+            }
+            output_size = tamaños_salida.get(tamaño_imagen.lower(), (600, 800))
+
+            # Redimensionar
+            img = self._redimensionar_imagen(img, output_size)
+
             doc.close()
             return img
-            
+
         except Exception as e:
             logger.error(f"Error extrayendo imagen de recibo: {str(e)}")
             raise
@@ -106,18 +113,19 @@ class ImageExtractor:
         
         return resized_img
     
-    def procesar_y_guardar_imagenes(self, recibos_detectados: list, procesamiento_id: str, calidad_imagen: str = 'media') -> list:
+    def procesar_y_guardar_imagenes(self, recibos_detectados: list, procesamiento_id: str, calidad_imagen: str = 'media', tamaño_imagen: str = 'mediana') -> list:
         """
         Procesa todos los recibos y guarda sus imágenes
-        
+
         Args:
             recibos_detectados: Lista de recibos detectados
             procesamiento_id: ID del procesamiento
             calidad_imagen: Calidad de imagen ('baja', 'media', 'alta')
+            tamaño_imagen: Tamaño de imagen ('pequeña', 'mediana', 'grande')
         """
-        logger.info(f"Procesando {len(recibos_detectados)} imágenes de recibos con calidad: {calidad_imagen}")
+        logger.info(f"Procesando {len(recibos_detectados)} imágenes de recibos con calidad: {calidad_imagen}, tamaño: {tamaño_imagen}")
         imagenes_procesadas = []
-        
+
         # Determinar formato y calidad de guardado según calidad_imagen
         # PNG no tiene parámetro quality, es lossless
         # Para mejor control, usamos JPEG con quality o PNG según calidad
@@ -127,13 +135,13 @@ class ImageExtractor:
             'alta': {'format': 'PNG', 'optimize': True}                      # PNG lossless
         }
         config = configuraciones_guardado.get(calidad_imagen.lower(), configuraciones_guardado['media'])
-        
+
         for i, recibo in enumerate(recibos_detectados):
             try:
                 logger.info(f"Procesando imagen del recibo {i + 1}")
-                
-                # Extraer imagen con calidad especificada
-                img = self.extraer_imagen_recibo(recibo, calidad_imagen=calidad_imagen)
+
+                # Extraer imagen con calidad y tamaño especificados
+                img = self.extraer_imagen_recibo(recibo, tamaño_imagen=tamaño_imagen, calidad_imagen=calidad_imagen)
                 
                 # Preparar para guardar con formato y calidad ajustada
                 img_buffer = io.BytesIO()

@@ -67,57 +67,19 @@
                             </div>
                             {% endif %}
                         </div>
-                        
-                        <!-- Configuraciones opcionales -->
-                        <div class="card mb-3">
-                            <div class="card-header">
-                                <h6 class="mb-0">
-                                    <i class="fas fa-cog"></i> Configuración de Procesamiento
-                                </h6>
-                            </div>
-                            <div class="card-body">
-                                <div class="row">
-                                    <div class="col-md-6">
-                                        <div class="form-check mb-3">
-                                            <input class="form-check-input" type="checkbox" 
-                                                   id="extraer_imagenes" checked>
-                                            <label class="form-check-label" for="extraer_imagenes">
-                                                Extraer imágenes de alta calidad
-                                            </label>
-                                        </div>
-                                        
-                                        <div class="mb-3">
-                                            <label for="calidad_imagen" class="form-label">Calidad de imagen</label>
-                                            <select class="form-select" id="calidad_imagen">
-                                                <option value="baja">Baja (rápido)</option>
-                                                <option value="media" selected>Media</option>
-                                                <option value="alta">Alta (lento)</option>
-                                            </select>
-                                        </div>
-                                    </div>
-                                    
-                                    <div class="col-md-6">
-                                        <div class="form-check mb-3">
-                                            <input class="form-check-input" type="checkbox" 
-                                                   id="generar_reporte" checked>
-                                            <label class="form-check-label" for="generar_reporte">
-                                                Generar reporte con estadísticas
-                                            </label>
-                                        </div>
-                                        
-                                        <div class="mb-3">
-                                            <label for="formato_salida" class="form-label">Formato de salida</label>
-                                            <select class="form-select" id="formato_salida">
-                                                <option value="pdf_imagenes" selected>PDF con imágenes</option>
-                                                <option value="pdf_texto">PDF solo texto</option>
-                                                <option value="ambos">Ambos formatos</option>
-                                            </select>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
+
+                        <!-- Información de procesamiento automático -->
+                        <div class="alert alert-info mb-3">
+                            <i class="fas fa-info-circle"></i>
+                            <strong>Procesamiento automático con alta calidad:</strong>
+                            <ul class="mb-0 mt-2">
+                                <li>Calidad de imagen: <strong>Alta</strong> (máxima resolución)</li>
+                                <li>Tamaño de imagen: <strong>Grande</strong> (900x1200 px)</li>
+                                <li>Formato: <strong>PDF con imágenes de alta calidad</strong></li>
+                                <li>Reporte estadístico: <strong>Incluido automáticamente</strong></li>
+                            </ul>
                         </div>
-                        
+
                         <div class="d-grid gap-2 d-md-flex justify-content-md-end">
                             <a href="{% url 'separador_recibos:dashboard' %}" class="btn btn-outline-secondary me-md-2">
                                 <i class="fas fa-arrow-left"></i> Cancelar
@@ -146,9 +108,10 @@
                     <ul class="mb-0">
                         <li><strong>Formato soportado:</strong> Solo archivos PDF</li>
                         <li><strong>Tamaño máximo:</strong> 50MB por archivo</li>
-                        <li><strong>Tiempo de procesamiento:</strong> Varía según el tamaño del archivo (1-5 minutos típicamente)</li>
-                        <li><strong>Resultado:</strong> PDF separado con cada recibo en una página individual</li>
+                        <li><strong>Tiempo de procesamiento:</strong> Varía según el tamaño del archivo y número de recibos (procesamiento de alta calidad)</li>
+                        <li><strong>Resultado:</strong> PDF con imágenes de alta resolución de cada recibo + reporte estadístico</li>
                         <li><strong>Tabla de seguimiento:</strong> Todos los recibos se almacenan para consulta posterior</li>
+                        <li><strong>Calidad garantizada:</strong> Todas las imágenes se extraen en máxima resolución (900x1200 px)</li>
                     </ul>
                 </div>
             </div>

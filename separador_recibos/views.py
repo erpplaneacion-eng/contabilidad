@@ -12,7 +12,7 @@ import os
 import io
 import logging
 from .models import ProcesamientoRecibo, ReciboDetectado
-from .forms import PDFUploadForm, FiltrosRecibosForm, EditarReciboForm, ConfiguracionProcesamientoForm
+from .forms import PDFUploadForm, FiltrosRecibosForm, EditarReciboForm
 from .utils.pdf_processor import PDFProcessor
 from .utils.image_extractor import ImageExtractor
 from .utils.pdf_generator import PDFGenerator
@@ -20,20 +20,27 @@ from .utils.pdf_generator import PDFGenerator
 logger = logging.getLogger(__name__)
 
 
-def procesar_recibo_sincrono(procesamiento_id, calidad_imagen='media'):
+def procesar_recibo_sincrono(procesamiento_id):
     """
     Procesa un PDF de recibos de forma síncrona (sin Celery/Redis).
     Versión simplificada para desarrollo local.
-    
+
     Args:
         procesamiento_id: ID del procesamiento
-        calidad_imagen: Calidad de imagen ('baja', 'media', 'alta'). Default: 'media'
     """
     try:
-        logger.info(f"Iniciando procesamiento síncrono de PDF: {procesamiento_id}, calidad: {calidad_imagen}")
-
         # Obtener el procesamiento
         procesamiento = ProcesamientoRecibo.objects.get(id=procesamiento_id)
+
+        # Leer configuración del modelo
+        calidad_imagen = procesamiento.calidad_imagen
+        tamaño_imagen = procesamiento.tamaño_imagen
+        formato_salida = procesamiento.formato_salida
+        extraer_imagenes = procesamiento.extraer_imagenes
+        generar_reporte = procesamiento.generar_reporte
+
+        logger.info(f"Iniciando procesamiento síncrono de PDF: {procesamiento_id}")
+        logger.info(f"Configuración - calidad: {calidad_imagen}, tamaño: {tamaño_imagen}, formato: {formato_salida}")
 
         # Actualizar estado
         procesamiento.estado = 'PROCESANDO'
@@ -53,10 +60,21 @@ def procesar_recibo_sincrono(procesamiento_id, calidad_imagen='media'):
         if not recibos_detectados:
             raise ValueError("No se encontraron recibos en el archivo PDF")
 
-        # Paso 2: Extraer imágenes con la calidad especificada
-        logger.info(f"Extrayendo imágenes de recibos con calidad: {calidad_imagen}...")
-        extractor = ImageExtractor(pdf_path)
-        imagenes_data = extractor.procesar_y_guardar_imagenes(recibos_detectados, procesamiento_id, calidad_imagen=calidad_imagen)
+        # Paso 2: Extraer imágenes con la calidad y tamaño especificados (si está habilitado)
+        imagenes_data = []
+        if extraer_imagenes:
+            logger.info(f"Extrayendo imágenes de recibos con calidad: {calidad_imagen}, tamaño: {tamaño_imagen}...")
+            extractor = ImageExtractor(pdf_path)
+            imagenes_data = extractor.procesar_y_guardar_imagenes(
+                recibos_detectados,
+                procesamiento_id,
+                calidad_imagen=calidad_imagen,
+                tamaño_imagen=tamaño_imagen
+            )
+        else:
+            logger.info("Extracción de imágenes deshabilitada")
+            # Crear datos vacíos para cada recibo
+            imagenes_data = [{'imagen_data': None} for _ in recibos_detectados]
 
         # Paso 3: Guardar información en base de datos
         logger.info("Guardando información de recibos en base de datos...")
@@ -95,8 +113,8 @@ def procesar_recibo_sincrono(procesamiento_id, calidad_imagen='media'):
             except Exception as e:
                 logger.error(f"Error guardando recibo {i + 1}: {str(e)}")
 
-        # Paso 4: Generar PDF separado
-        logger.info("Generando PDF separado...")
+        # Paso 4: Generar PDF separado según formato_salida
+        logger.info(f"Generando PDF separado con formato: {formato_salida}...")
         output_path = f"media/pdfs_procesados/recibos_separados_{procesamiento_id}.pdf"
 
         # Asegurar que el directorio existe
@@ -135,13 +153,34 @@ def procesar_recibo_sincrono(procesamiento_id, calidad_imagen='media'):
 
             imagenes_generadas.append(imagen_data)
 
-        # Generar PDF
+        # Generar PDF según formato especificado
         generator = PDFGenerator(output_path)
         try:
-            generator.generar_pdf_con_imagenes(recibos_data, imagenes_generadas)
+            if formato_salida == 'pdf_imagenes':
+                generator.generar_pdf_con_imagenes(recibos_data, imagenes_generadas)
+            elif formato_salida == 'pdf_texto':
+                generator.generar_pdf_simple(recibos_data)
+            elif formato_salida == 'ambos':
+                # Generar ambos formatos
+                generator.generar_pdf_con_imagenes(recibos_data, imagenes_generadas)
+                # Generar PDF de texto con sufijo
+                output_path_texto = f"media/pdfs_procesados/recibos_separados_texto_{procesamiento_id}.pdf"
+                generator_texto = PDFGenerator(output_path_texto)
+                generator_texto.generar_pdf_simple(recibos_data)
+                logger.info(f"PDF de texto generado: {output_path_texto}")
         except Exception as e:
-            logger.warning(f"Error generando PDF con imágenes: {str(e)}. Intentando PDF simple...")
+            logger.warning(f"Error generando PDF con formato {formato_salida}: {str(e)}. Intentando PDF simple...")
             generator.generar_pdf_simple(recibos_data)
+
+        # Paso 5: Generar reporte estadístico (si está habilitado)
+        if generar_reporte:
+            try:
+                logger.info("Generando reporte estadístico...")
+                reporte_path = generator.generar_reporte_estadisticas(recibos_data)
+                procesamiento.archivo_reporte.name = reporte_path.replace("media/", "")
+                logger.info(f"Reporte generado: {reporte_path}")
+            except Exception as e:
+                logger.warning(f"Error generando reporte: {str(e)}")
 
         # Actualizar procesamiento
         procesamiento.archivo_resultado.name = output_path.replace("media/", "")
@@ -170,24 +209,25 @@ def procesar_recibo_sincrono(procesamiento_id, calidad_imagen='media'):
 
 @login_required
 def upload_pdf(request):
-    """Vista para subir archivo PDF"""
+    """Vista para subir archivo PDF (procesamiento automático con alta calidad)"""
     if request.method == 'POST':
         form = PDFUploadForm(request.POST, request.FILES)
         if form.is_valid():
             try:
                 procesamiento = form.save(commit=False)
                 procesamiento.usuario = request.user
+                # Los valores por defecto del modelo ya están configurados para alta calidad:
+                # calidad_imagen='alta', tamaño_imagen='grande', formato_salida='pdf_imagenes'
+                # extraer_imagenes=True, generar_reporte=True
                 procesamiento.save()
 
-                # Leer configuración de calidad de imagen del formulario
-                calidad_imagen = request.POST.get('calidad_imagen', 'media')
-                logger.info(f"Calidad de imagen seleccionada: {calidad_imagen}")
+                logger.info(f"Iniciando procesamiento de alta calidad para usuario {request.user.username}")
 
                 # Procesar de forma síncrona (sin Celery/Redis)
-                # Para usar procesamiento asíncrono, reemplazar con: procesar_recibo_pdf.delay(procesamiento.id, calidad_imagen)
+                # Para usar procesamiento asíncrono, reemplazar con: procesar_recibo_pdf.delay(procesamiento.id)
                 try:
-                    procesar_recibo_sincrono(procesamiento.id, calidad_imagen=calidad_imagen)
-                    logger.info(f"Procesamiento completado para usuario {request.user.username}")
+                    procesar_recibo_sincrono(procesamiento.id)
+                    logger.info(f"Procesamiento completado exitosamente")
                 except Exception as e:
                     logger.error(f"Error en procesamiento: {str(e)}")
                     # El error ya fue guardado en la base de datos por procesar_recibo_sincrono

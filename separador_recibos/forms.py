@@ -4,8 +4,8 @@ from .models import ProcesamientoRecibo, ReciboDetectado
 
 
 class PDFUploadForm(forms.ModelForm):
-    """Formulario para subir archivos PDF"""
-    
+    """Formulario para subir archivos PDF (configuración automática de alta calidad)"""
+
     class Meta:
         model = ProcesamientoRecibo
         fields = ['archivo_original']
@@ -13,34 +13,34 @@ class PDFUploadForm(forms.ModelForm):
             'archivo_original': forms.FileInput(attrs={
                 'class': 'form-control',
                 'accept': '.pdf',
-                'id': 'pdfFileInput'
+                'id': 'id_archivo_original'
             })
         }
-    
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields['archivo_original'].label = 'Archivo PDF'
         self.fields['archivo_original'].help_text = 'Selecciona un archivo PDF que contenga múltiples recibos'
-    
+
     def clean_archivo_original(self):
         """Validación personalizada del archivo"""
         archivo = self.cleaned_data.get('archivo_original')
-        
+
         if not archivo:
             raise forms.ValidationError('Debe seleccionar un archivo')
-        
+
         # Validar extensión
         if not archivo.name.lower().endswith('.pdf'):
             raise forms.ValidationError('Solo se permiten archivos PDF')
-        
+
         # Validar tamaño (máximo 50MB)
         if archivo.size > 50 * 1024 * 1024:  # 50MB
             raise forms.ValidationError('El archivo es demasiado grande. Máximo 50MB')
-        
+
         # Validar tipo de contenido
         if archivo.content_type not in ['application/pdf']:
             raise forms.ValidationError('El archivo debe ser un PDF válido')
-        
+
         return archivo
 
 
@@ -196,64 +196,3 @@ class EditarReciboForm(forms.ModelForm):
         if valor and valor <= 0:
             raise forms.ValidationError('El valor debe ser mayor a cero')
         return valor
-
-
-class ConfiguracionProcesamientoForm(forms.Form):
-    """Formulario para configurar el procesamiento de PDF"""
-    
-    extraer_imagenes = forms.BooleanField(
-        required=False,
-        initial=True,
-        widget=forms.CheckboxInput(attrs={
-            'class': 'form-check-input'
-        }),
-        help_text='Extraer imágenes de alta calidad de cada recibo'
-    )
-    
-    calidad_imagen = forms.ChoiceField(
-        required=False,
-        choices=[
-            ('baja', 'Baja (rápido)'),
-            ('media', 'Media'),
-            ('alta', 'Alta (lento)'),
-        ],
-        initial='media',
-        widget=forms.Select(attrs={
-            'class': 'form-control'
-        })
-    )
-    
-    tamaño_imagen = forms.ChoiceField(
-        required=False,
-        choices=[
-            ('pequeña', 'Pequeña (300x400)'),
-            ('mediana', 'Mediana (600x800)'),
-            ('grande', 'Grande (900x1200)'),
-        ],
-        initial='mediana',
-        widget=forms.Select(attrs={
-            'class': 'form-control'
-        })
-    )
-    
-    generar_reporte = forms.BooleanField(
-        required=False,
-        initial=True,
-        widget=forms.CheckboxInput(attrs={
-            'class': 'form-check-input'
-        }),
-        help_text='Generar reporte con estadísticas'
-    )
-    
-    formato_salida = forms.ChoiceField(
-        required=False,
-        choices=[
-            ('pdf_imagenes', 'PDF con imágenes'),
-            ('pdf_texto', 'PDF solo texto'),
-            ('ambos', 'Ambos formatos'),
-        ],
-        initial='pdf_imagenes',
-        widget=forms.Select(attrs={
-            'class': 'form-control'
-        })
-    )
