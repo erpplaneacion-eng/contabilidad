@@ -322,6 +322,7 @@
 {% endblock %}
 
 {% block extra_js %}
+{{ block.super }}
 <script>
 function showImageModal(imageSrc, title) {
     document.getElementById('modalImage').src = imageSrc;

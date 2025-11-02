@@ -190,6 +190,7 @@
 {% endblock %}
 
 {% block extra_js %}
+{{ block.super }}
 <script>
 $(document).ready(function() {
     const status = "{{ procesamiento.estado }}";

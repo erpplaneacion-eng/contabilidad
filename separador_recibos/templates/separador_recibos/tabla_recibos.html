@@ -395,6 +395,7 @@
 {% endblock %}
 
 {% block extra_js %}
+{{ block.super }}
 <script>
 function toggleView(view) {
     const tableView = document.getElementById('tableView');

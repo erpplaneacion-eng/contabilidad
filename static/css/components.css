@@ -20,76 +20,12 @@
 }
 
 /* ===== SIDEBAR ===== */
-.sidebar {
-    width: var(--sidebar-width);
-    background: linear-gradient(180deg, #212529 0%, #343a40 100%);
-    color: white;
-    position: sticky;
-    top: 0;
-    height: 100vh;
-    overflow-y: auto;
-    transition: all 0.3s ease;
-}
+/* Los estilos principales del sidebar ahora están en:
+   - base_authenticated.html (estilos de colapso y posicionamiento)
+   - templates/components/sidebar.html (estilos de apariencia)
 
-.sidebar-header {
-    padding: 1.5rem;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.sidebar-header h4 {
-    margin: 0;
-    font-size: 1.25rem;
-}
-
-.sidebar-menu {
-    padding: 1rem;
-}
-
-.sidebar-item {
-    display: block;
-    padding: 0.75rem 1rem;
-    color: white;
-    text-decoration: none;
-    border-radius: 8px;
-    transition: all 0.3s ease;
-    margin-bottom: 0.5rem;
-}
-
-.sidebar-item:hover {
-    background-color: rgba(255, 255, 255, 0.1);
-    color: white;
-    transform: translateX(5px);
-}
-
-.sidebar-item.active {
-    background-color: rgba(13, 110, 253, 0.5);
-    border-left: 3px solid #0d6efd;
-}
-
-.sidebar-item i {
-    width: 20px;
-    text-align: center;
-    margin-right: 0.5rem;
-}
-
-.sidebar-section {
-    margin-top: 1.5rem;
-}
-
-.sidebar-section h6 {
-    padding: 0 1rem;
-    margin-bottom: 0.75rem;
-    color: rgba(255, 255, 255, 0.5);
-    font-size: 0.75rem;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-}
-
-.sidebar-footer {
-    margin-top: auto;
-    padding-top: 1rem;
-    border-top: 1px solid rgba(255, 255, 255, 0.1);
-}
+   Estos estilos se mantienen solo como fallback
+*/
 
 /* ===== NAVBAR ===== */
 .navbar {
