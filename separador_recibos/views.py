@@ -338,7 +338,7 @@ class TablaRecibosView(LoginRequiredMixin, ListView):
         # Aplicar filtros
         form = FiltrosRecibosForm(self.request.GET)
         if form.is_valid():
-            queryset = self._aplicar_filtros(queryset, form)
+            return self._aplicar_filtros(queryset, form)
         
         return queryset.order_by('numero_secuencial')
     
@@ -351,7 +351,7 @@ class TablaRecibosView(LoginRequiredMixin, ListView):
         fecha_desde = form.cleaned_data.get('fecha_desde')
         fecha_hasta = form.cleaned_data.get('fecha_hasta')
         estado = form.cleaned_data.get('estado')
-        orden_por = form.cleaned_data.get('orden_por', 'numero_secuencial')
+        orden_por = form.cleaned_data.get('orden_por')
         direccion = form.cleaned_data.get('direccion', 'asc')
         
         if beneficiario:
@@ -378,12 +378,13 @@ class TablaRecibosView(LoginRequiredMixin, ListView):
             queryset = queryset.filter(validado=False)
         
         # Aplicar ordenamiento
+        if not orden_por:
+            orden_por = 'numero_secuencial'
+
         if direccion == 'desc':
             orden_por = f'-{orden_por}'
         
-        queryset = queryset.order_by(orden_por)
-        
-        return queryset
+        return queryset.order_by(orden_por)
     
     def get_context_data(self, **kwargs):
         """Agregar contexto adicional"""
