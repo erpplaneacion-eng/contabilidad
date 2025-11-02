@@ -1,115 +1,22 @@
-{% extends "base_public.html" %}
+{% extends "base.html" %}
+{% load static %}
 
 {% block title %}Iniciar Sesión - Sistema de Gestión Contable{% endblock %}
 
-{% block content %}
-<div class="login-container">
-    <div class="login-card">
-        <div class="login-header">
-            <i class="fas fa-user-lock"></i>
-            <h3>Panel de Administración</h3>
-            <p class="mb-0 mt-2">Sistema de Gestión Contable</p>
-        </div>
-
-        <div class="login-body">
-            {% if form.errors %}
-                <div class="alert alert-danger" role="alert">
-                    <i class="fas fa-exclamation-circle"></i>
-                    <strong>Error:</strong> Usuario o contraseña incorrectos.
-                </div>
-            {% endif %}
-
-            {% if next %}
-                {% if user.is_authenticated %}
-                    <div class="alert alert-warning" role="alert">
-                        <i class="fas fa-exclamation-triangle"></i>
-                        Tu cuenta no tiene acceso a esta página.
-                    </div>
-                {% endif %}
-            {% endif %}
-
-            <form method="post" action="{% url 'login' %}">
-                {% csrf_token %}
-
-                <div class="mb-3">
-                    <label for="id_username" class="form-label">
-                        <i class="fas fa-user"></i> Usuario
-                    </label>
-                    <div class="input-group">
-                        <span class="input-group-text">
-                            <i class="fas fa-user"></i>
-                        </span>
-                        <input type="text"
-                               name="username"
-                               id="id_username"
-                               class="form-control"
-                               placeholder="Ingrese su usuario"
-                               required
-                               autofocus>
-                    </div>
-                </div>
-
-                <div class="mb-4">
-                    <label for="id_password" class="form-label">
-                        <i class="fas fa-lock"></i> Contraseña
-                    </label>
-                    <div class="input-group">
-                        <span class="input-group-text">
-                            <i class="fas fa-lock"></i>
-                        </span>
-                        <input type="password"
-                               name="password"
-                               id="id_password"
-                               class="form-control"
-                               placeholder="Ingrese su contraseña"
-                               required>
-                    </div>
-                </div>
-
-                <button type="submit" class="btn btn-login">
-                    <i class="fas fa-sign-in-alt"></i> Iniciar Sesión
-                </button>
-
-                <input type="hidden" name="next" value="{{ next }}">
-            </form>
-        </div>
-
-        <div class="login-footer">
-            <p class="mb-2">
-                <i class="fas fa-info-circle"></i>
-                <strong>Acceso solo para personal autorizado</strong>
-            </p>
-            <p class="mb-0">
-                <a href="{% url 'proveedores:registro_publico' %}">
-                    <i class="fas fa-arrow-left"></i> Volver al formulario de proveedores
-                </a>
-            </p>
-        </div>
-    </div>
-
-    <div class="text-center mt-4 text-white">
-        <p class="mb-0">
-            <i class="fas fa-shield-alt"></i> Conexión segura
-        </p>
-    </div>
-</div>
-
+{% block extra_css %}
 <style>
     body {
         background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    }
-
-    .public-content {
         display: flex;
         align-items: center;
         justify-content: center;
-        min-height: calc(100vh - 200px);
+        min-height: 100vh;
+        padding: 20px;
     }
 
     .login-container {
         max-width: 450px;
         width: 100%;
-        padding: 20px;
     }
 
     .login-card {
@@ -206,4 +113,97 @@
         text-decoration: underline;
     }
 </style>
+{% endblock %}
+
+{% block body_content %}
+<div class="login-container">
+    <div class="login-card">
+        <div class="login-header">
+            <i class="fas fa-user-lock"></i>
+            <h3>Panel de Administración</h3>
+            <p class="mb-0 mt-2">Sistema de Gestión Contable</p>
+        </div>
+
+        <div class="login-body">
+            {% if form.errors %}
+                <div class="alert alert-danger" role="alert">
+                    <i class="fas fa-exclamation-circle"></i>
+                    <strong>Error:</strong> Usuario o contraseña incorrectos.
+                </div>
+            {% endif %}
+
+            {% if next %}
+                {% if user.is_authenticated %}
+                    <div class="alert alert-warning" role="alert">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        Tu cuenta no tiene acceso a esta página.
+                    </div>
+                {% endif %}
+            {% endif %}
+
+            <form method="post" action="{% url 'login' %}">
+                {% csrf_token %}
+
+                <div class="mb-3">
+                    <label for="id_username" class="form-label">
+                        <i class="fas fa-user"></i> Usuario
+                    </label>
+                    <div class="input-group">
+                        <span class="input-group-text">
+                            <i class="fas fa-user"></i>
+                        </span>
+                        <input type="text"
+                               name="username"
+                               id="id_username"
+                               class="form-control"
+                               placeholder="Ingrese su usuario"
+                               required
+                               autofocus>
+                    </div>
+                </div>
+
+                <div class="mb-4">
+                    <label for="id_password" class="form-label">
+                        <i class="fas fa-lock"></i> Contraseña
+                    </label>
+                    <div class="input-group">
+                        <span class="input-group-text">
+                            <i class="fas fa-lock"></i>
+                        </span>
+                        <input type="password"
+                               name="password"
+                               id="id_password"
+                               class="form-control"
+                               placeholder="Ingrese su contraseña"
+                               required>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn btn-login">
+                    <i class="fas fa-sign-in-alt"></i> Iniciar Sesión
+                </button>
+
+                <input type="hidden" name="next" value="{{ next }}">
+            </form>
+        </div>
+
+        <div class="login-footer">
+            <p class="mb-2">
+                <i class="fas fa-info-circle"></i>
+                <strong>Acceso solo para personal autorizado</strong>
+            </p>
+            <p class="mb-0">
+                <a href="{% url 'proveedores:registro_publico' %}">
+                    <i class="fas fa-arrow-left"></i> Volver al formulario de proveedores
+                </a>
+            </p>
+        </div>
+    </div>
+
+    <div class="text-center mt-4 text-white">
+        <p class="mb-0">
+            <i class="fas fa-shield-alt"></i> Conexión segura
+        </p>
+    </div>
+</div>
 {% endblock %}
