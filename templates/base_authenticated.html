@@ -29,30 +29,139 @@
 <style>
     .wrapper {
         min-height: 100vh;
+        transition: padding-left 0.3s ease;
+    }
+
+    .sidebar {
+        width: 250px;
+        transition: all 0.3s ease;
+        position: fixed;
+        top: 0;
+        left: 0;
+        height: 100vh;
+        z-index: 1000;
     }
 
     .main-content {
         background-color: #f8f9fa;
         overflow-x: hidden;
+        padding-left: 250px; /* Espacio para el sidebar */
+        width: 100%;
+        transition: padding-left 0.3s ease;
     }
 
     .content-wrapper {
         min-height: calc(100vh - 60px); /* 60px = altura del navbar */
     }
 
+    /* Estilos para sidebar colapsado */
+    .wrapper.sidebar-collapsed .sidebar {
+        width: 70px;
+    }
+
+    .wrapper.sidebar-collapsed .main-content {
+        padding-left: 70px;
+    }
+
+    /* Ocultar textos cuando está colapsado */
+    .wrapper.sidebar-collapsed .sidebar .sidebar-text {
+        display: none;
+    }
+
+    /* Ocultar títulos de sección cuando está colapsado */
+    .wrapper.sidebar-collapsed .sidebar-section h6 {
+        display: none;
+    }
+
+    /* Header colapsado */
+    .wrapper.sidebar-collapsed .sidebar .sidebar-header {
+        text-align: center;
+        padding: 1rem 0.5rem !important;
+    }
+
+    .wrapper.sidebar-collapsed .sidebar .sidebar-header h4 {
+        font-size: 1.5rem;
+        text-align: center;
+    }
+
+    .wrapper.sidebar-collapsed .sidebar .sidebar-header small {
+        display: none;
+    }
+
+    /* Items centrados cuando está colapsado */
+    .wrapper.sidebar-collapsed .sidebar .sidebar-item {
+        text-align: center;
+        padding: 0.75rem 0.5rem !important;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+
+    .wrapper.sidebar-collapsed .sidebar .sidebar-item i {
+        margin-right: 0 !important;
+        font-size: 1.2rem;
+    }
+
+    /* Deshabilitar transformación en hover cuando está colapsado */
+    .wrapper.sidebar-collapsed .sidebar-item:hover {
+        transform: none;
+    }
+
+    /* Ajustar border del item activo cuando está colapsado */
+    .wrapper.sidebar-collapsed .sidebar-item.active {
+        border-left: none !important;
+        border-top: 3px solid #0d6efd !important;
+        padding-top: 12px !important;
+    }
+
+    /* Tooltips para mostrar texto cuando está colapsado (opcional) */
+    .wrapper.sidebar-collapsed .sidebar-item {
+        position: relative;
+    }
+
+    .wrapper.sidebar-collapsed .sidebar-item::after {
+        content: attr(title);
+        position: absolute;
+        left: 100%;
+        top: 50%;
+        transform: translateY(-50%);
+        background: #212529;
+        color: white;
+        padding: 0.5rem 1rem;
+        border-radius: 0.25rem;
+        white-space: nowrap;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.3s ease;
+        margin-left: 0.5rem;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+        z-index: 1001;
+    }
+
+    .wrapper.sidebar-collapsed .sidebar-item:hover::after {
+        opacity: 1;
+    }
+
     /* Responsive: ocultar sidebar en móviles */
     @media (max-width: 768px) {
+        /* En móviles, el sidebar se oculta por defecto */
         .sidebar {
             position: fixed;
             left: -250px;
             transition: left 0.3s ease;
-            z-index: 1000;
+            z-index: 1050;
         }
 
-        .sidebar.show {
+        /* Cuando se muestra en móvil */
+        .sidebar.show-mobile {
             left: 0;
         }
 
+        .main-content {
+            padding-left: 0 !important;
+        }
+
+        /* Overlay oscuro cuando el sidebar está abierto en móvil */
         .sidebar-overlay {
             display: none;
             position: fixed;
@@ -61,28 +170,72 @@
             width: 100%;
             height: 100%;
             background-color: rgba(0, 0, 0, 0.5);
-            z-index: 999;
+            z-index: 1040;
         }
 
         .sidebar-overlay.show {
             display: block;
         }
+
+        /* En móvil, ignorar el estado colapsado */
+        .wrapper.sidebar-collapsed .sidebar {
+            width: 250px;
+            left: -250px;
+        }
+
+        .wrapper.sidebar-collapsed .main-content {
+            padding-left: 0;
+        }
     }
+
 </style>
 
 {% block extra_js %}
 {{ block.super }}
 <script>
-    // Toggle sidebar en móvil
     $(document).ready(function() {
+        // Toggle sidebar: colapsar en desktop, show/hide en móvil
         $('#sidebarToggle').on('click', function() {
-            $('.sidebar').toggleClass('show');
-            $('.sidebar-overlay').toggleClass('show');
+            var windowWidth = $(window).width();
+
+            if (windowWidth > 768) {
+                // Desktop: colapsar/expandir sidebar
+                $('.wrapper').toggleClass('sidebar-collapsed');
+            } else {
+                // Móvil: mostrar/ocultar sidebar
+                $('.sidebar').toggleClass('show-mobile');
+                $('.sidebar-overlay').toggleClass('show');
+            }
         });
 
+        // Cerrar sidebar al hacer clic en el overlay (solo móvil)
         $('.sidebar-overlay').on('click', function() {
-            $('.sidebar').removeClass('show');
+            $('.sidebar').removeClass('show-mobile');
             $('.sidebar-overlay').removeClass('show');
+        });
+
+        // Cerrar sidebar al cambiar de página en móvil
+        if ($(window).width() <= 768) {
+            $('.sidebar-item').on('click', function() {
+                setTimeout(function() {
+                    $('.sidebar').removeClass('show-mobile');
+                    $('.sidebar-overlay').removeClass('show');
+                }, 300);
+            });
+        }
+
+        // Manejar resize de ventana
+        $(window).on('resize', function() {
+            var windowWidth = $(window).width();
+
+            if (windowWidth > 768) {
+                // Si cambiamos a desktop, remover clases de móvil
+                $('.sidebar').removeClass('show-mobile');
+                $('.sidebar-overlay').removeClass('show');
+            } else {
+                // Si cambiamos a móvil, remover clase de colapsado
+                $('.wrapper').removeClass('sidebar-collapsed');
+            }
         });
     });
 </script>
