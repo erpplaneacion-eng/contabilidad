@@ -23,29 +23,28 @@ class PDFProcessor:
         """
         try:
             logger.info(f"Iniciando detección de recibos en: {self.pdf_path}")
-            
+
             with pdfplumber.open(self.pdf_path) as pdf:
                 for pagina_num, pagina in enumerate(pdf.pages):
                     logger.info(f"Procesando página {pagina_num + 1}")
-                    
-                    # Extraer palabras con coordenadas
-                    texto_coordenadas = pagina.extract_words(
-                        x_tolerance=3, 
-                        y_tolerance=3,
-                        extra_attrs=["text", "x0", "y0", "x1", "y1"]
-                    )
-                    
+
+                    # Extraer palabras con coordenadas (SIN x_tolerance ni y_tolerance)
+                    # Esto extrae palabras completas en lugar de letras individuales
+                    texto_coordenadas = pagina.extract_words()
+
+                    logger.info(f"  Palabras extraídas: {len(texto_coordenadas)}")
+
                     # Buscar patrones de recibos
                     recibos_pagina = self._buscar_patrones_recibo(texto_coordenadas, pagina_num)
-                    
+
                     for recibo in recibos_pagina:
                         # Extraer información específica del recibo
-                        recibo_info = self._extraer_info_recibo(texto_coordenadas, recibo)
+                        recibo_info = self._extraer_info_recibo(texto_coordenadas, recibo, pagina)
                         self.recibos_detectados.append(recibo_info)
-            
+
             logger.info(f"Detección completada. Encontrados {len(self.recibos_detectados)} recibos")
             return self.recibos_detectados
-            
+
         except Exception as e:
             logger.error(f"Error procesando PDF: {str(e)}")
             raise
@@ -53,27 +52,93 @@ class PDFProcessor:
     def _buscar_patrones_recibo(self, texto_coordenadas: List[Dict], pagina_num: int) -> List[Dict]:
         """Busca patrones específicos de recibos en el texto"""
         recibos = []
-        
+
+        logger.info(f"Buscando recibos en página {pagina_num + 1}, total palabras: {len(texto_coordenadas)}")
+
+        # Buscar el patrón "Recibo individual de pagos" juntando palabras consecutivas
         for i, word in enumerate(texto_coordenadas):
-            if "Recibo individual de pagos" in word.get('text', ''):
-                recibo_info = {
-                    'pagina': pagina_num + 1,
-                    'coordenada_x': word['x0'],
-                    'coordenada_y': word['y0'],
-                    'word_index': i
-                }
-                recibos.append(recibo_info)
-        
+            texto_palabra = word.get('text', '').strip()
+
+            # Verificar si encontramos la palabra "Recibo"
+            if texto_palabra.lower() == 'recibo':
+                # Obtener coordenadas Y de forma más robusta
+                y_coord = word.get('y0') or word.get('top') or word.get('y') or 0
+                x_coord = word.get('x0') or word.get('x') or 0
+
+                logger.info(f"[DEBUG] Encontrada 'Recibo' en índice {i}, Y={y_coord}, palabra completa: {word}")
+
+                # Juntar las siguientes 10 palabras para formar la frase
+                frase_completa = []
+                coordenadas_inicio = {'x0': x_coord, 'y0': y_coord}
+
+                # Tomar hasta 10 palabras siguientes en la misma línea
+                for j in range(i, min(i + 10, len(texto_coordenadas))):
+                    palabra_actual = texto_coordenadas[j]
+                    y_actual = palabra_actual.get('y0') or palabra_actual.get('top') or palabra_actual.get('y') or 0
+
+                    # Verificar que estén en la misma línea (misma coordenada Y aproximada)
+                    if abs(y_actual - y_coord) < 5:
+                        frase_completa.append(palabra_actual.get('text', ''))
+                    else:
+                        break
+
+                # Unir las palabras y verificar si contiene el patrón
+                texto_junto = ' '.join(frase_completa)
+                logger.info(f"   Frase formada ({len(frase_completa)} palabras): '{texto_junto}'")
+
+                # Buscar "recibo individual de pagos" con o sin "sucursal virtual"
+                texto_junto_lower = texto_junto.lower()
+                if 'individual' in texto_junto_lower and 'pagos' in texto_junto_lower:
+                    recibo_info = {
+                        'pagina': pagina_num + 1,
+                        'coordenada_x': coordenadas_inicio['x0'],
+                        'coordenada_y': coordenadas_inicio['y0'],
+                        'word_index': i
+                    }
+                    recibos.append(recibo_info)
+                    logger.info(f"✅ Recibo DETECTADO en página {pagina_num + 1}: '{texto_junto}'")
+                else:
+                    logger.warning(f"   ❌ No coincide con patrón esperado")
+
+        logger.info(f"Total recibos encontrados en página {pagina_num + 1}: {len(recibos)}")
         return recibos
     
-    def _extraer_info_recibo(self, texto_coordenadas: List[Dict], recibo_base: Dict) -> Dict:
+    def _extraer_info_recibo(self, texto_coordenadas: List[Dict], recibo_base: Dict, pagina=None) -> Dict:
         """Extrae información específica del recibo"""
+
+        # Calcular altura del recibo de forma más precisa
+        # Buscar todos los "Recibo" en la misma página para calcular la distancia
+        y_inicio = recibo_base['coordenada_y']
+        y_recibos = []
+
+        for word in texto_coordenadas:
+            if word.get('text', '').strip().lower() == 'recibo':
+                # Intentar obtener la coordenada Y de diferentes formas
+                y_coord = word.get('y0') or word.get('top') or word.get('y') or 0
+                y_recibos.append(y_coord)
+
+        # Ordenar las coordenadas Y
+        y_recibos_ordenados = sorted(y_recibos)
+
+        # Encontrar el índice del recibo actual
+        try:
+            idx_actual = y_recibos_ordenados.index(y_inicio)
+            # Si hay un siguiente recibo, usar esa distancia; si no, usar 228 puntos (altura típica)
+            if idx_actual + 1 < len(y_recibos_ordenados):
+                altura_recibo = y_recibos_ordenados[idx_actual + 1] - y_inicio
+            else:
+                altura_recibo = 228  # Altura estimada basada en los datos
+        except ValueError:
+            altura_recibo = 228
+
+        logger.info(f"  Recibo en Y={y_inicio:.1f}, altura calculada={altura_recibo:.1f}")
+
         recibo_info = {
             'pagina': recibo_base['pagina'],
             'x': recibo_base['coordenada_x'],
-            'y': recibo_base['coordenada_y'],
-            'width': 0,
-            'height': 0,
+            'y': y_inicio,
+            'width': 595,  # A4 width en puntos
+            'height': altura_recibo,
             'texto_completo': '',
             'beneficiario': '',
             'valor': None,
@@ -84,28 +149,29 @@ class PDFProcessor:
             'concepto': '',
             'estado': ''
         }
-        
-        # Extraer área del recibo (desde el título hasta el final del recibo)
-        recibo_info['width'] = 595  # A4 width en puntos
-        recibo_info['height'] = 800  # Altura estimada del recibo
-        
-        # Recopilar texto del recibo
+
+        # Recopilar texto del recibo (desde Y hasta Y + altura)
         texto_recibo = []
         for word in texto_coordenadas:
-            if self._esta_en_area_recibo(word, recibo_base):
-                texto_recibo.append(word['text'])
-                recibo_info['texto_completo'] += f"{word['text']} "
-        
+            word_y = word.get('y0') or word.get('top') or word.get('y') or 0
+            # Solo incluir palabras dentro del área del recibo
+            if y_inicio <= word_y < (y_inicio + altura_recibo):
+                texto_word = word.get('text', '')
+                texto_recibo.append(texto_word)
+                recibo_info['texto_completo'] += f"{texto_word} "
+
+        logger.info(f"  Texto extraído: {len(texto_recibo)} palabras")
+
         # Extraer información específica
         recibo_info.update(self._parsear_texto_recibo(' '.join(texto_recibo)))
-        
+
         return recibo_info
     
-    def _esta_en_area_recibo(self, word: Dict, recibo_base: Dict) -> bool:
+    def _esta_en_area_recibo(self, word: Dict, recibo_base: Dict, altura: float = 228) -> bool:
         """Determina si una palabra está en el área del recibo"""
-        # Buscar palabras desde el título hasta aproximadamente 800 puntos hacia abajo
-        return (word['y0'] >= recibo_base['coordenada_y'] and 
-                word['y0'] <= recibo_base['coordenada_y'] + 800)
+        word_y = word.get('y0', word.get('top', 0))
+        y_inicio = recibo_base['coordenada_y']
+        return (word_y >= y_inicio and word_y < (y_inicio + altura))
     
     def _parsear_texto_recibo(self, texto: str) -> Dict:
         """Parsea el texto del recibo para extraer información específica"""

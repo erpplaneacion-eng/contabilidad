@@ -174,19 +174,24 @@ def upload_pdf(request):
                 procesamiento = form.save(commit=False)
                 procesamiento.usuario = request.user
                 procesamiento.save()
-                
-                # Iniciar procesamiento asíncrono
-                procesar_recibo_pdf.delay(procesamiento.id)
 
-                logger.info(f"Procesamiento iniciado para usuario {request.user.username}")
+                # Procesar de forma síncrona (sin Celery/Redis)
+                # Para usar procesamiento asíncrono, reemplazar con: procesar_recibo_pdf.delay(procesamiento.id)
+                try:
+                    procesar_recibo_sincrono(procesamiento.id)
+                    logger.info(f"Procesamiento completado para usuario {request.user.username}")
+                except Exception as e:
+                    logger.error(f"Error en procesamiento: {str(e)}")
+                    # El error ya fue guardado en la base de datos por procesar_recibo_sincrono
+
                 return redirect('separador_recibos:process_status', procesamiento_id=procesamiento.id)
-                
+
             except Exception as e:
                 logger.error(f"Error guardando procesamiento: {str(e)}")
                 form.add_error(None, f"Error procesando archivo: {str(e)}")
     else:
         form = PDFUploadForm()
-    
+
     context = {
         'form': form,
         'titulo': 'Subir PDF de Recibos'

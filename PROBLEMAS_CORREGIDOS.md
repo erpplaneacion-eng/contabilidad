@@ -58,6 +58,19 @@
      - `separador_recibos/templates/separador_recibos/results.html`
      - `separador_recibos/templates/separador_recibos/recibo_detail.html`
 
+9. **Error jQuery "$ is not defined"**
+   - **Problema**: jQuery se cargaba después de Bootstrap y el código se ejecutaba antes de cargar jQuery
+   - **Solución**:
+     - Reordenado scripts en base.html (jQuery primero)
+     - Movido todo el código JavaScript a bloque `{% block extra_js %}`
+   - **Archivos modificados**: Todos los templates con JavaScript
+
+10. **Error WinError 10061 - Conexión a Redis denegada**
+   - **Problema**: La app intentaba usar Celery/Redis para procesamiento asíncrono pero Redis no estaba instalado
+   - **Solución**: Creada función `procesar_recibo_sincrono()` que procesa PDFs de forma síncrona
+   - **Archivo**: `separador_recibos/views.py`
+   - **Nota**: Para producción con alto volumen, se recomienda instalar Redis + Celery
+
 8. **Conflicto STATICFILES_DIRS y STATIC_ROOT**
    - **Problema**: Potencial conflicto entre directorios estáticos
    - **Solución**: Validación condicional antes de agregar STATICFILES_DIRS
