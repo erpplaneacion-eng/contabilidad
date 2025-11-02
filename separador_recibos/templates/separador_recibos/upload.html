@@ -1,0 +1,247 @@
+{% extends 'separador_recibos/base.html' %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-8 offset-md-2">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-upload"></i> Subir Archivo PDF de Recibos
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form method="post" enctype="multipart/form-data" id="uploadForm">
+                        {% csrf_token %}
+                        
+                        {% if form.non_field_errors %}
+                        <div class="alert alert-danger">
+                            {{ form.non_field_errors }}
+                        </div>
+                        {% endif %}
+                        
+                        <div class="mb-3">
+                            <label for="id_archivo_original" class="form-label">
+                                <i class="fas fa-file-pdf"></i> Archivo PDF
+                            </label>
+                            <div class="file-upload-wrapper">
+                                <input type="file" 
+                                       name="archivo_original" 
+                                       accept=".pdf" 
+                                       required 
+                                       id="id_archivo_original"
+                                       class="form-control"
+                                       style="display: none;">
+                                
+                                <div class="border rounded p-4 text-center" 
+                                     onclick="document.getElementById('id_archivo_original').click()"
+                                     style="cursor: pointer; border: 2px dashed #007bff !important;">
+                                    <div id="filePreview" style="display: none;">
+                                        <i class="fas fa-file-pdf fa-3x text-success mb-3"></i>
+                                        <div id="fileName" class="fw-bold"></div>
+                                        <div id="fileSize" class="text-muted"></div>
+                                    </div>
+                                    
+                                    <div id="fileUploadArea">
+                                        <i class="fas fa-cloud-upload-alt fa-3x text-primary mb-3"></i>
+                                        <p class="mb-2">Haz clic aquí para seleccionar un archivo PDF</p>
+                                        <p class="text-muted small">
+                                            o arrastra y suelta tu archivo aquí
+                                        </p>
+                                        <small class="text-muted">
+                                            Solo archivos PDF. Máximo 50MB.
+                                        </small>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            {% if form.archivo_original.errors %}
+                            <div class="text-danger mt-2">
+                                {{ form.archivo_original.errors }}
+                            </div>
+                            {% endif %}
+                            
+                            {% if form.archivo_original.help_text %}
+                            <div class="form-text mt-2">
+                                {{ form.archivo_original.help_text }}
+                            </div>
+                            {% endif %}
+                        </div>
+                        
+                        <!-- Configuraciones opcionales -->
+                        <div class="card mb-3">
+                            <div class="card-header">
+                                <h6 class="mb-0">
+                                    <i class="fas fa-cog"></i> Configuración de Procesamiento
+                                </h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="form-check mb-3">
+                                            <input class="form-check-input" type="checkbox" 
+                                                   id="extraer_imagenes" checked>
+                                            <label class="form-check-label" for="extraer_imagenes">
+                                                Extraer imágenes de alta calidad
+                                            </label>
+                                        </div>
+                                        
+                                        <div class="mb-3">
+                                            <label for="calidad_imagen" class="form-label">Calidad de imagen</label>
+                                            <select class="form-select" id="calidad_imagen">
+                                                <option value="baja">Baja (rápido)</option>
+                                                <option value="media" selected>Media</option>
+                                                <option value="alta">Alta (lento)</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="col-md-6">
+                                        <div class="form-check mb-3">
+                                            <input class="form-check-input" type="checkbox" 
+                                                   id="generar_reporte" checked>
+                                            <label class="form-check-label" for="generar_reporte">
+                                                Generar reporte con estadísticas
+                                            </label>
+                                        </div>
+                                        
+                                        <div class="mb-3">
+                                            <label for="formato_salida" class="form-label">Formato de salida</label>
+                                            <select class="form-select" id="formato_salida">
+                                                <option value="pdf_imagenes" selected>PDF con imágenes</option>
+                                                <option value="pdf_texto">PDF solo texto</option>
+                                                <option value="ambos">Ambos formatos</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            <a href="{% url 'dashboard' %}" class="btn btn-outline-secondary me-md-2">
+                                <i class="fas fa-arrow-left"></i> Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-primary" id="submitBtn">
+                                <i class="fas fa-upload"></i> 
+                                <span id="submitText">Subir y Procesar</span>
+                                <div id="loadingSpinner" class="spinner-border spinner-border-sm ms-2" 
+                                     style="display: none;" role="status">
+                                    <span class="visually-hidden">Procesando...</span>
+                                </div>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            
+            <!-- Información de ayuda -->
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h6 class="mb-0">
+                        <i class="fas fa-info-circle"></i> Información Importante
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <ul class="mb-0">
+                        <li><strong>Formato soportado:</strong> Solo archivos PDF</li>
+                        <li><strong>Tamaño máximo:</strong> 50MB por archivo</li>
+                        <li><strong>Tiempo de procesamiento:</strong> Varía según el tamaño del archivo (1-5 minutos típicamente)</li>
+                        <li><strong>Resultado:</strong> PDF separado con cada recibo en una página individual</li>
+                        <li><strong>Tabla de seguimiento:</strong> Todos los recibos se almacenan para consulta posterior</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+$(document).ready(function() {
+    // Manejo de selección de archivo
+    $('#id_archivo_original').change(function(e) {
+        const file = e.target.files[0];
+        if (file) {
+            // Validar tipo de archivo
+            if (!file.type.match('application/pdf')) {
+                alert('Por favor selecciona un archivo PDF válido.');
+                $(this).val('');
+                return;
+            }
+            
+            // Validar tamaño (50MB)
+            if (file.size > 50 * 1024 * 1024) {
+                alert('El archivo es demasiado grande. Máximo 50MB.');
+                $(this).val('');
+                return;
+            }
+            
+            // Mostrar preview
+            const fileName = file.name;
+            const fileSize = (file.size / (1024 * 1024)).toFixed(2) + ' MB';
+            
+            $('#fileName').text(fileName);
+            $('#fileSize').text(fileSize);
+            $('#filePreview').show();
+            $('#fileUploadArea').hide();
+        }
+    });
+    
+    // Manejo de drag and drop
+    const fileUploadWrapper = $('.border');
+    
+    fileUploadWrapper.on('dragover', function(e) {
+        e.preventDefault();
+        $(this).addClass('border-primary');
+    });
+    
+    fileUploadWrapper.on('dragleave', function(e) {
+        e.preventDefault();
+        $(this).removeClass('border-primary');
+    });
+    
+    fileUploadWrapper.on('drop', function(e) {
+        e.preventDefault();
+        $(this).removeClass('border-primary');
+        
+        const files = e.originalEvent.dataTransfer.files;
+        if (files.length > 0) {
+            const file = files[0];
+            const input = $('#id_archivo_original')[0];
+            const dt = new DataTransfer();
+            dt.items.add(file);
+            input.files = dt.files;
+            
+            // Trigger change event
+            input.dispatchEvent(new Event('change'));
+        }
+    });
+    
+    // Manejo del formulario
+    $('#uploadForm').submit(function(e) {
+        const fileInput = $('#id_archivo_original')[0];
+        if (!fileInput.files || fileInput.files.length === 0) {
+            alert('Por favor selecciona un archivo PDF.');
+            e.preventDefault();
+            return;
+        }
+        
+        // Mostrar loading
+        $('#submitBtn').prop('disabled', true);
+        $('#submitText').text('Procesando...');
+        $('#loadingSpinner').show();
+    });
+});
+</script>
+
+<style>
+.file-upload-wrapper:hover .border {
+    background-color: #f8f9fa;
+}
+
+.spinner-border-sm {
+    width: 1rem;
+    height: 1rem;
+}
+</style>
+{% endblock %}

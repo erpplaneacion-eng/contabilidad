@@ -1,0 +1,306 @@
+{% extends 'separador_recibos/base.html' %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <!-- Header -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h2>
+                        <i class="fas fa-check-circle text-success"></i>
+                        Resultados del Procesamiento
+                    </h2>
+                    <p class="text-muted mb-0">
+                        {{ procesamiento.fecha_subida|date:"d/m/Y H:i" }} - 
+                        {{ procesamiento.archivo_original.name|default:"Sin nombre" }}
+                    </p>
+                </div>
+                <div class="btn-group">
+                    {% if procesamiento.archivo_resultado %}
+                    <a href="{% url 'download_result' procesamiento.id %}" 
+                       class="btn btn-success">
+                        <i class="fas fa-download"></i> Descargar PDF
+                    </a>
+                    {% endif %}
+                    <a href="{% url 'upload_pdf' %}" class="btn btn-primary">
+                        <i class="fas fa-plus"></i> Nuevo Procesamiento
+                    </a>
+                </div>
+            </div>
+
+            <!-- Estadísticas del procesamiento -->
+            <div class="row mb-4">
+                <div class="col-md-3">
+                    <div class="card text-white bg-success">
+                        <div class="card-body text-center">
+                            <i class="fas fa-file-pdf fa-2x mb-2"></i>
+                            <h3>{{ procesamiento.total_recibos }}</h3>
+                            <p class="mb-0">Recibos Detectados</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card text-white bg-info">
+                        <div class="card-body text-center">
+                            <i class="fas fa-dollar-sign fa-2x mb-2"></i>
+                            <h3>${{ total_valor|floatformat:0|default:"0" }}</h3>
+                            <p class="mb-0">Valor Total</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card text-white bg-warning">
+                        <div class="card-body text-center">
+                            <i class="fas fa-clock fa-2x mb-2"></i>
+                            <h3>{{ procesamiento.fecha_subida|date:"d/m/Y" }}</h3>
+                            <p class="mb-0">Fecha Procesamiento</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card text-white bg-primary">
+                        <div class="card-body text-center">
+                            <i class="fas fa-check fa-2x mb-2"></i>
+                            <h3>{{ recibos|length }}</h3>
+                            <p class="mb-0">En Base de Datos</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Resumen de entidades bancarias -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-university"></i> Distribución por Entidades Bancarias
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% regroup recibos by entidad_bancaria as entidades_list %}
+                    <div class="row">
+                        {% for entidad in entidades_list %}
+                        <div class="col-md-4 mb-3">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h6 class="mb-1">{{ entidad.grouper|default:"Sin especificar" }}</h6>
+                                    <small class="text-muted">{{ entidad.list|length }} recibos</small>
+                                </div>
+                                <div class="text-end">
+                                    {% with valor_entidad=0 %}
+                                    {% for recibo in entidad.list %}
+                                        {% if recibo.valor %}{% with valor_entidad=valor_entidad|add:recibo.valor %}{% endwith %}{% endif %}
+                                    {% endfor %}
+                                    <div class="fw-bold">${{ valor_entidad|floatformat:0 }}</div>
+                                    {% endwith %}
+                                </div>
+                            </div>
+                            <div class="progress mt-2" style="height: 6px;">
+                                {% widthratio entidad.list|length procesamiento.total_recibos 100 as percentage %}
+                                <div class="progress-bar" role="progressbar" style="width: {{ percentage }}%"></div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Galería de recibos -->
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">
+                        <i class="fas fa-images"></i> Galería de Recibos ({{ recibos|length }})
+                    </h5>
+                    <div class="btn-group btn-group-sm" role="group">
+                        <input type="checkbox" class="btn-check" id="selectAll">
+                        <label class="btn btn-outline-primary" for="selectAll">
+                            <i class="fas fa-check"></i> Seleccionar Todos
+                        </label>
+                        <button class="btn btn-outline-success" onclick="downloadSelected()">
+                            <i class="fas fa-download"></i> Descargar Seleccionados
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="card-body">
+                    {% if recibos %}
+                    <div class="row">
+                        {% for recibo in recibos %}
+                        <div class="col-md-4 col-lg-3 mb-4">
+                            <div class="card h-100">
+                                <div class="position-relative">
+                                    {% if recibo.imagen_recibo %}
+                                    <img src="{{ recibo.imagen_recibo.url }}" 
+                                         class="card-img-top" 
+                                         style="height: 200px; object-fit: cover; cursor: pointer;"
+                                         alt="Recibo {{ recibo.numero_secuencial }}"
+                                         onclick="showImageModal('{{ recibo.imagen_recibo.url }}', 'Recibo #{{ recibo.numero_secuencial }}')">
+                                    {% else %}
+                                    <div class="card-img-top d-flex align-items-center justify-content-center bg-light" 
+                                         style="height: 200px;">
+                                        <i class="fas fa-image fa-3x text-muted"></i>
+                                    </div>
+                                    {% endif %}
+                                    
+                                    <!-- Checkbox para selección -->
+                                    <div class="position-absolute top-0 start-0 m-2">
+                                        <input class="form-check-input recibo-checkbox" 
+                                               type="checkbox" 
+                                               value="{{ recibo.id }}"
+                                               id="recibo_{{ recibo.id }}">
+                                    </div>
+                                    
+                                    <!-- Número de recibo -->
+                                    <div class="position-absolute bottom-0 start-0 bg-dark bg-opacity-75 text-white px-2 py-1 rounded-end">
+                                        <small>#{{ recibo.numero_secuencial }}</small>
+                                    </div>
+                                </div>
+                                
+                                <div class="card-body">
+                                    <h6 class="card-title">{{ recibo.nombre_beneficiario|default:"Sin nombre" }}</h6>
+                                    <div class="d-flex justify-content-between align-items-center mb-2">
+                                        <span class="badge bg-success">
+                                            {% if recibo.valor %}
+                                                ${{ recibo.valor|floatformat:0 }}
+                                            {% else %}
+                                                Sin valor
+                                            {% endif %}
+                                        </span>
+                                        <small class="text-muted">{{ recibo.entidad_bancaria|default:"N/A" }}</small>
+                                    </div>
+                                    
+                                    <div class="mb-2">
+                                        <small class="text-muted d-block">
+                                            <i class="fas fa-calendar"></i> 
+                                            {{ recibo.fecha_aplicacion|default:"Sin fecha"|date:"d/m/Y" }}
+                                        </small>
+                                        <small class="text-muted d-block">
+                                            <i class="fas fa-hashtag"></i> 
+                                            {{ recibo.referencia|default:"Sin referencia"|truncatechars:15 }}
+                                        </small>
+                                    </div>
+                                </div>
+                                
+                                <div class="card-footer">
+                                    <div class="btn-group w-100">
+                                        <a href="{% url 'ver_recibo' recibo.id %}" 
+                                           class="btn btn-sm btn-outline-primary">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                        <a href="{% url 'editar_recibo' recibo.id %}" 
+                                           class="btn btn-sm btn-outline-secondary">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+                                        {% if recibo.imagen_recibo %}
+                                        <a href="{% url 'descargar_imagen' recibo.id %}" 
+                                           class="btn btn-sm btn-outline-info">
+                                            <i class="fas fa-download"></i>
+                                        </a>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <div class="text-center py-5">
+                        <i class="fas fa-search fa-3x text-muted mb-3"></i>
+                        <h5 class="text-muted">No se encontraron recibos</h5>
+                        <p class="text-muted">No hay recibos disponibles para mostrar.</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Acciones adicionales -->
+            <div class="mt-4">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <a href="{% url 'dashboard' %}" class="btn btn-outline-secondary">
+                            <i class="fas fa-arrow-left"></i> Volver al Dashboard
+                        </a>
+                        <a href="{% url 'tabla_recibos' %}" class="btn btn-outline-info">
+                            <i class="fas fa-table"></i> Ver Tabla Completa
+                        </a>
+                    </div>
+                    <div>
+                        <a href="{% url 'upload_pdf' %}" class="btn btn-primary">
+                            <i class="fas fa-plus"></i> Procesar Otro PDF
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para mostrar imagen -->
+<div class="modal fade" id="imageModal" tabindex="-1">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="imageModalTitle">Vista Previa</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body text-center">
+                <img id="modalImage" src="" class="img-fluid" alt="Vista previa">
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function showImageModal(imageSrc, title) {
+    document.getElementById('modalImage').src = imageSrc;
+    document.getElementById('imageModalTitle').textContent = title;
+    new bootstrap.Modal(document.getElementById('imageModal')).show();
+}
+
+// Manejo de selección de recibos
+document.getElementById('selectAll').addEventListener('change', function() {
+    const checkboxes = document.querySelectorAll('.recibo-checkbox');
+    checkboxes.forEach(checkbox => {
+        checkbox.checked = this.checked;
+    });
+});
+
+function downloadSelected() {
+    const selected = Array.from(document.querySelectorAll('.recibo-checkbox:checked'))
+                         .map(cb => cb.value);
+    
+    if (selected.length === 0) {
+        alert('Selecciona al menos un recibo para descargar.');
+        return;
+    }
+    
+    // Crear formulario oculto para descarga masiva
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.action = '/separador/exportar_recibos/';
+    form.style.display = 'none';
+    
+    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+    const csrfInput = document.createElement('input');
+    csrfInput.type = 'hidden';
+    csrfInput.name = 'csrfmiddlewaretoken';
+    csrfInput.value = csrfToken;
+    
+    selected.forEach(id => {
+        const input = document.createElement('input');
+        input.type = 'hidden';
+        input.name = 'recibo_ids';
+        input.value = id;
+        form.appendChild(input);
+    });
+    
+    form.appendChild(csrfInput);
+    document.body.appendChild(form);
+    form.submit();
+    document.body.removeChild(form);
+}
+</script>
+{% endblock %}

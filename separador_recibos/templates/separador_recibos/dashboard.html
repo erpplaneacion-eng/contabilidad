@@ -1,0 +1,256 @@
+{% extends 'separador_recibos/base.html' %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Estadísticas principales -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card text-white" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h6 class="card-title">Total Procesamientos</h6>
+                            <h2 class="mb-0">{{ total_procesamientos }}</h2>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-file-pdf fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-footer bg-transparent border-0">
+                    <small>Archivos PDF procesados</small>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-3">
+            <div class="card text-white" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h6 class="card-title">Total Recibos</h6>
+                            <h2 class="mb-0">{{ total_recibos }}</h2>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-receipt fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-footer bg-transparent border-0">
+                    <small>Recibos extraídos</small>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-3">
+            <div class="card text-white" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h6 class="card-title">Valor Total</h6>
+                            <h2 class="mb-0">${{ valor_total|floatformat:0|default:"0" }}</h2>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-dollar-sign fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-footer bg-transparent border-0">
+                    <small>En todos los recibos</small>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-3">
+            <div class="card text-white" style="background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h6 class="card-title">Procesamientos Recientes</h6>
+                            <h2 class="mb-0">{{ procesamientos_recientes|length }}</h2>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-clock fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-footer bg-transparent border-0">
+                    <small>Últimos 7 días</small>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row">
+        <!-- Procesamientos recientes -->
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">
+                        <i class="fas fa-history"></i> Procesamientos Recientes
+                    </h5>
+                    <a href="{% url 'upload_pdf' %}" class="btn btn-primary btn-sm">
+                        <i class="fas fa-plus"></i> Nuevo Procesamiento
+                    </a>
+                </div>
+                <div class="card-body">
+                    {% if procesamientos_recientes %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Fecha</th>
+                                    <th>Archivo</th>
+                                    <th>Estado</th>
+                                    <th>Recibos</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for proc in procesamientos_recientes %}
+                                <tr>
+                                    <td>
+                                        <small>{{ proc.fecha_subida|date:"d/m/Y H:i" }}</small>
+                                    </td>
+                                    <td>
+                                        <small class="text-truncate d-inline-block" style="max-width: 200px;">
+                                            {{ proc.archivo_original.name|default:"Sin nombre" }}
+                                        </small>
+                                    </td>
+                                    <td>
+                                        {% if proc.estado == 'COMPLETADO' %}
+                                            <span class="badge bg-success">Completado</span>
+                                        {% elif proc.estado == 'PROCESANDO' %}
+                                            <span class="badge bg-warning">Procesando</span>
+                                        {% elif proc.estado == 'ERROR' %}
+                                            <span class="badge bg-danger">Error</span>
+                                        {% else %}
+                                            <span class="badge bg-secondary">{{ proc.estado }}</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if proc.total_recibos > 0 %}
+                                            <span class="badge bg-info">{{ proc.total_recibos }}</span>
+                                        {% else %}
+                                            <span class="text-muted">-</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <a href="{% url 'process_status' proc.id %}" 
+                                           class="btn btn-sm btn-outline-primary">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                        {% if proc.archivo_resultado %}
+                                        <a href="{% url 'download_result' proc.id %}" 
+                                           class="btn btn-sm btn-outline-success">
+                                            <i class="fas fa-download"></i>
+                                        </a>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="text-center py-5">
+                        <i class="fas fa-file-pdf fa-3x text-muted mb-3"></i>
+                        <p class="text-muted">No hay procesamientos recientes</p>
+                        <a href="{% url 'upload_pdf' %}" class="btn btn-primary">
+                            <i class="fas fa-upload"></i> Subir tu primer PDF
+                        </a>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <!-- Top entidades bancarias -->
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-chart-bar"></i> Top Entidades Bancarias
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if entidades_stats %}
+                    <div class="list-group list-group-flush">
+                        {% for entidad in entidades_stats %}
+                        <div class="list-group-item d-flex justify-content-between align-items-center px-0">
+                            <div>
+                                <h6 class="mb-1">{{ entidad.entidad_bancaria|default:"Entidad no especificada" }}</h6>
+                                <small class="text-muted">
+                                    {{ entidad.total_recibos }} recibos
+                                </small>
+                            </div>
+                            <div class="text-end">
+                                <div class="fw-bold">${{ entidad.valor_total|default:0|floatformat:0 }}</div>
+                                <div class="progress mt-1" style="height: 4px; width: 60px;">
+                                    {% widthratio entidad.valor_total valor_total 100 as percentage %}
+                                    <div class="progress-bar" role="progressbar" 
+                                         style="width: {{ percentage }}%"></div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <div class="text-center py-4">
+                        <i class="fas fa-chart-pie fa-2x text-muted mb-2"></i>
+                        <p class="text-muted">No hay datos disponibles</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <!-- Acciones rápidas -->
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-bolt"></i> Acciones Rápidas
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <a href="{% url 'upload_pdf' %}" class="btn btn-primary">
+                            <i class="fas fa-upload"></i> Subir PDF
+                        </a>
+                        <a href="{% url 'tabla_recibos' %}" class="btn btn-outline-info">
+                            <i class="fas fa-table"></i> Ver Tabla de Recibos
+                        </a>
+                        <a href="{% url 'exportar_recibos' %}" class="btn btn-outline-success">
+                            <i class="fas fa-file-export"></i> Exportar a CSV
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Auto-refresh para procesamientos en curso
+$(document).ready(function() {
+    function checkProcessingStatus() {
+        $('.badge.bg-warning').each(function() {
+            const $badge = $(this);
+            const processingId = $badge.closest('tr').find('a[href*="/procesando/"]').attr('href');
+            
+            if (processingId) {
+                $.get(processingId)
+                 .done(function(data) {
+                     // Refresh page if status changed
+                     if (data.estado && data.estado !== 'PROCESANDO') {
+                         location.reload();
+                     }
+                 });
+            }
+        });
+    }
+    
+    // Check every 30 seconds
+    setInterval(checkProcessingStatus, 30000);
+});
+</script>
+{% endblock %}

@@ -29,6 +29,8 @@ urlpatterns = [
     path('logout/', auth_views.LogoutView.as_view(next_page='/login/'), name='logout'),
 
     # URLs de proveedores
+    # URLs del Separador de Recibos PDF
+    path('separador/', include('separador_recibos.urls')),
     path('proveedores/', include('proveedores.urls')),
 
     # Redirigir la raíz al formulario de registro

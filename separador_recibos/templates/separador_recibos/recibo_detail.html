@@ -1,0 +1,396 @@
+{% extends 'separador_recibos/base.html' %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-8 offset-md-2">
+            <!-- Header -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h2>
+                        <i class="fas fa-receipt"></i>
+                        Recibo #{{ recibo.numero_secuencial }}
+                    </h2>
+                    <p class="text-muted mb-0">
+                        Procesamiento: {{ recibo.procesamiento.fecha_subida|date:"d/m/Y H:i" }}
+                    </p>
+                </div>
+                <div class="btn-group">
+                    <a href="{% url 'editar_recibo' recibo.id %}" class="btn btn-primary">
+                        <i class="fas fa-edit"></i> Editar
+                    </a>
+                    <a href="{% url 'download_imagen' recibo.id %}" class="btn btn-outline-success">
+                        <i class="fas fa-download"></i> Imagen
+                    </a>
+                    <a href="{% url 'tabla_recibos' %}" class="btn btn-outline-secondary">
+                        <i class="fas fa-arrow-left"></i> Volver
+                    </a>
+                </div>
+            </div>
+
+            <div class="row">
+                <!-- Imagen del recibo -->
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="mb-0">
+                                <i class="fas fa-image"></i> Vista del Recibo
+                                {% if recibo.validado %}
+                                    <span class="badge bg-success ms-2">Validado</span>
+                                {% else %}
+                                    <span class="badge bg-secondary ms-2">No validado</span>
+                                {% endif %}
+                            </h5>
+                        </div>
+                        <div class="card-body text-center">
+                            {% if recibo.imagen_recibo %}
+                                <img src="{{ recibo.imagen_recibo.url }}" 
+                                     class="img-fluid rounded shadow" 
+                                     style="max-height: 500px; cursor: pointer;"
+                                     alt="Recibo {{ recibo.numero_secuencial }}"
+                                     onclick="showImageModal('{{ recibo.imagen_recibo.url }}', 'Recibo #{{ recibo.numero_secuencial }}')">
+                                
+                                <div class="mt-3">
+                                    <small class="text-muted">
+                                        <i class="fas fa-info-circle"></i>
+                                        Haz clic para ver en tamaño completo
+                                    </small>
+                                </div>
+                            {% else %}
+                                <div class="alert alert-info">
+                                    <i class="fas fa-image fa-3x mb-3"></i>
+                                    <p>No hay imagen disponible para este recibo</p>
+                                    <small class="text-muted">
+                                        Es posible que la extracción de imagen haya fallado durante el procesamiento
+                                    </small>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Información del recibo -->
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="mb-0">
+                                <i class="fas fa-info-circle"></i> Información Extraída
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-sm-4">
+                                    <strong>Beneficiario:</strong>
+                                </div>
+                                <div class="col-sm-8">
+                                    {{ recibo.nombre_beneficiario|default:"N/A" }}
+                                </div>
+                            </div>
+                            
+                            <hr>
+                            
+                            <div class="row">
+                                <div class="col-sm-4">
+                                    <strong>Valor:</strong>
+                                </div>
+                                <div class="col-sm-8">
+                                    {% if recibo.valor %}
+                                        <span class="text-success fw-bold h5">
+                                            ${{ recibo.valor|floatformat:0 }}
+                                        </span>
+                                    {% else %}
+                                        <span class="text-muted">N/A</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            
+                            <hr>
+                            
+                            <div class="row">
+                                <div class="col-sm-4">
+                                    <strong>Entidad:</strong>
+                                </div>
+                                <div class="col-sm-8">
+                                    {{ recibo.entidad_bancaria|default:"N/A" }}
+                                </div>
+                            </div>
+                            
+                            <hr>
+                            
+                            <div class="row">
+                                <div class="col-sm-4">
+                                    <strong>Cuenta:</strong>
+                                </div>
+                                <div class="col-sm-8">
+                                    {{ recibo.numero_cuenta|default:"N/A" }}
+                                </div>
+                            </div>
+                            
+                            <hr>
+                            
+                            <div class="row">
+                                <div class="col-sm-4">
+                                    <strong>Referencia:</strong>
+                                </div>
+                                <div class="col-sm-8">
+                                    {{ recibo.referencia|default:"N/A" }}
+                                </div>
+                            </div>
+                            
+                            <hr>
+                            
+                            <div class="row">
+                                <div class="col-sm-4">
+                                    <strong>Fecha:</strong>
+                                </div>
+                                <div class="col-sm-8">
+                                    {% if recibo.fecha_aplicacion %}
+                                        {{ recibo.fecha_aplicacion|date:"d/m/Y" }}
+                                    {% else %}
+                                        N/A
+                                    {% endif %}
+                                </div>
+                            </div>
+                            
+                            <hr>
+                            
+                            <div class="row">
+                                <div class="col-sm-4">
+                                    <strong>Concepto:</strong>
+                                </div>
+                                <div class="col-sm-8">
+                                    {{ recibo.concepto|default:"N/A" }}
+                                </div>
+                            </div>
+                            
+                            <hr>
+                            
+                            <div class="row">
+                                <div class="col-sm-4">
+                                    <strong>Estado:</strong>
+                                </div>
+                                <div class="col-sm-8">
+                                    <span class="badge bg-success">{{ recibo.estado_pago|default:"N/A" }}</span>
+                                </div>
+                            </div>
+                            
+                            <hr>
+                            
+                            <div class="row">
+                                <div class="col-sm-4">
+                                    <strong>Tipo Cuenta:</strong>
+                                </div>
+                                <div class="col-sm-8">
+                                    {{ recibo.tipo_cuenta|default:"N/A" }}
+                                </div>
+                            </div>
+                            
+                            <hr>
+                            
+                            <div class="row">
+                                <div class="col-sm-4">
+                                    <strong>Documento:</strong>
+                                </div>
+                                <div class="col-sm-8">
+                                    {{ recibo.documento|default:"N/A" }}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Información técnica -->
+                    <div class="card mt-3">
+                        <div class="card-header">
+                            <h6 class="mb-0">
+                                <i class="fas fa-cog"></i> Información Técnica
+                            </h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-sm-4">
+                                    <strong>Detectado:</strong>
+                                </div>
+                                <div class="col-sm-8">
+                                    {{ recibo.fecha_deteccion|date:"d/m/Y H:i" }}
+                                </div>
+                            </div>
+                            
+                            <hr>
+                            
+                            <div class="row">
+                                <div class="col-sm-4">
+                                    <strong>Coordenadas:</strong>
+                                </div>
+                                <div class="col-sm-8">
+                                    <small class="text-muted">
+                                        X: {{ recibo.coordenada_x|floatformat:0 }}, 
+                                        Y: {{ recibo.coordenada_y|floatformat:0 }}
+                                    </small>
+                                </div>
+                            </div>
+                            
+                            <hr>
+                            
+                            <div class="row">
+                                <div class="col-sm-4">
+                                    <strong>Dimensiones:</strong>
+                                </div>
+                                <div class="col-sm-8">
+                                    <small class="text-muted">
+                                        {{ recibo.ancho|floatformat:0 }} x {{ recibo.alto|floatformat:0 }} px
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Texto extraído si está disponible -->
+            {% if recibo.texto_extraido %}
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-text-width"></i> Texto Extraído
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="bg-light p-3 rounded" style="max-height: 300px; overflow-y: auto;">
+                        <pre class="mb-0 small">{{ recibo.texto_extraido }}</pre>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Acciones -->
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h6 class="mb-0">Acciones Disponibles</h6>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6>Validación</h6>
+                            <div class="btn-group" role="group">
+                                {% if recibo.validado %}
+                                <button class="btn btn-success" disabled>
+                                    <i class="fas fa-check"></i> Validado
+                                </button>
+                                <button class="btn btn-outline-danger" onclick="invalidarRecibo()">
+                                    <i class="fas fa-times"></i> Invalidar
+                                </button>
+                                {% else %}
+                                <button class="btn btn-outline-success" onclick="validarRecibo()">
+                                    <i class="fas fa-check"></i> Validar
+                                </button>
+                                <button class="btn btn-secondary" disabled>
+                                    <i class="fas fa-times"></i> No validado
+                                </button>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <h6>Exportación</h6>
+                            <div class="btn-group" role="group">
+                                <a href="{% url 'descargar_imagen' recibo.id %}" class="btn btn-outline-primary">
+                                    <i class="fas fa-download"></i> Imagen
+                                </a>
+                                <button class="btn btn-outline-secondary" onclick="copiarInfo()">
+                                    <i class="fas fa-copy"></i> Copiar Info
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para imagen -->
+<div class="modal fade" id="imageModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="imageModalTitle">Vista Previa</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body text-center">
+                <img id="modalImage" src="" class="img-fluid" alt="Vista previa">
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function showImageModal(imageSrc, title) {
+    document.getElementById('modalImage').src = imageSrc;
+    document.getElementById('imageModalTitle').textContent = title;
+    new bootstrap.Modal(document.getElementById('imageModal')).show();
+}
+
+function validarRecibo() {
+    if (confirm('¿Marcar este recibo como validado?')) {
+        fetch('{% url "validar_recibo" recibo.id %}', {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': '{{ csrf_token }}',
+                'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: 'action=validate'
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert('Error: ' + (data.error || 'Error desconocido'));
+            }
+        })
+        .catch(error => {
+            alert('Error de conexión');
+        });
+    }
+}
+
+function invalidarRecibo() {
+    if (confirm('¿Marcar este recibo como no validado?')) {
+        fetch('{% url "validar_recibo" recibo.id %}', {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': '{{ csrf_token }}',
+                'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: 'action=invalidate'
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert('Error: ' + (data.error || 'Error desconocido'));
+            }
+        })
+        .catch(error => {
+            alert('Error de conexión');
+        });
+    }
+}
+
+function copiarInfo() {
+    const info = `
+Recibo #{{ recibo.numero_secuencial }}
+Beneficiario: {{ recibo.nombre_beneficiario|default:"N/A" }}
+Valor: ${{ recibo.valor|floatformat:0|default:"N/A" }}
+Entidad: {{ recibo.entridad_bancaria|default:"N/A" }}
+Cuenta: {{ recibo.numero_cuenta|default:"N/A" }}
+Referencia: {{ recibo.referencia|default:"N/A" }}
+Fecha: {{ recibo.fecha_aplicacion|default:"N/A"|date:"d/m/Y" }}
+    `;
+    
+    navigator.clipboard.writeText(info.trim()).then(() => {
+        alert('Información copiada al portapapeles');
+    });
+}
+</script>
+{% endblock %}

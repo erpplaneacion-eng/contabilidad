@@ -134,4 +134,79 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 # Login/Logout URLs
 LOGIN_URL = '/login/'
 LOGIN_REDIRECT_URL = '/proveedores/lista/'
+# Configuración adicional para Separador de Recibos PDF
+
+# Celery Configuration
+CELERY_BROKER_URL = 'redis://localhost:6379/0'
+CELERY_RESULT_BACKEND = 'redis://localhost:6379/0'
+CELERY_ACCEPT_CONTENT = ['json']
+CELERY_TASK_SERIALIZER = 'json'
+CELERY_RESULT_SERIALIZER = 'json'
+CELERY_TIMEZONE = 'America/Bogota'
+CELERY_TASK_TRACK_STARTED = True
+CELERY_TASK_TIME_LIMIT = 30 * 60  # 30 minutos
+
+# Configuración para archivos media
+MEDIA_URL = '/media/'
+MEDIC_ROOT = BASE_DIR / 'media'
+# Crear directorios si no existen
+import os
+MEDIA_DIRS = [
+    BASE_DIR / 'media' / 'pdfs_originales',
+    BASE_DIR / 'media' / 'pdfs_procesados',
+    BASE_DIR / 'media' / 'imagenes_recibos'
+]
+for media_dir in MEDIA_DIRS:
+    os.makedirs(media_dir, exist_ok=True)
+
+# Configuración de logging para aplicación
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'verbose': {
+            'format': '{levelname} {asctime} {module} {process:d} {thread:d} {message}',
+            'style': '{',
+        },
+        'simple': {
+            'format': '{levelname} {message}',
+            'style': '{',
+        },
+    },
+    'handlers': {
+        'file': {
+            'level': 'INFO',
+            'class': 'logging.FileHandler',
+            'filename': BASE_DIR / 'separador_recibos.log',
+            'formatter': 'verbose',
+        },
+        'console': {
+            'level': 'DEBUG',
+            'class': 'logging.StreamHandler',
+            'formatter': 'simple',
+        },
+    },
+    'loggers': {
+        'separador_recibos': {
+            'handlers': ['file', 'console'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+    },
+}
+
+# Configuración para caché de imágenes
+IMAGE_CACHE_TIMEOUT = 3600  # 1 hora
+
+# Tamaño máximo de archivo para subir
+FILE_UPLOAD_MAX_MEMORY_SIZE = 50 * 1024 * 1024  # 50MB
+
+# Configuración de email para notificaciones (opcional)
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'localhost'
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+EMAIL_HOST_USER = ''
+EMAIL_HOST_PASSWORD = ''
+DEFAULT_FROM_EMAIL = 'noreply@separadorrecibos.com'
 LOGOUT_REDIRECT_URL = '/login/'

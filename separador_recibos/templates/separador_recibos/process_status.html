@@ -1,0 +1,265 @@
+{% extends 'separador_recibos/base.html' %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-8 offset-md-2">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-cog fa-spin" id="processingIcon"></i>
+                        Estado del Procesamiento
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <!-- Información del procesamiento -->
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <strong>Archivo:</strong> {{ procesamiento.archivo_original.name|default:"Sin nombre" }}<br>
+                            <strong>Fecha:</strong> {{ procesamiento.fecha_subida|date:"d/m/Y H:i" }}<br>
+                            <strong>Usuario:</strong> {{ procesamiento.usuario.username }}
+                        </div>
+                        <div class="col-md-6">
+                            <strong>Estado:</strong> 
+                            {% if procesamiento.estado == 'COMPLETADO' %}
+                                <span class="badge bg-success" id="statusBadge">Completado</span>
+                            {% elif procesamiento.estado == 'PROCESANDO' %}
+                                <span class="badge bg-warning" id="statusBadge">Procesando</span>
+                            {% elif procesamiento.estado == 'ERROR' %}
+                                <span class="badge bg-danger" id="statusBadge">Error</span>
+                            {% else %}
+                                <span class="badge bg-secondary" id="statusBadge">{{ procesamiento.estado }}</span>
+                            {% endif %}
+                            <br>
+                            <strong>Total Recibos:</strong> 
+                            <span id="totalRecibos">{{ procesamiento.total_recibos|default:"0" }}</span>
+                        </div>
+                    </div>
+                    
+                    <!-- Barra de progreso -->
+                    <div class="mb-4">
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>Progreso</span>
+                            <span id="progressPercent">0%</span>
+                        </div>
+                        <div class="progress progress-custom">
+                            <div class="progress-bar progress-bar-striped progress-bar-animated" 
+                                 role="progressbar" 
+                                 id="progressBar" 
+                                 style="width: 0%">
+                            </div>
+                        </div>
+                        <div class="mt-2">
+                            <small class="text-muted" id="progressText">
+                                {% if procesamiento.estado == 'PENDIENTE' %}
+                                    Esperando para comenzar el procesamiento...
+                                {% elif procesamiento.estado == 'PROCESANDO' %}
+                                    Detectando recibos en el archivo PDF...
+                                {% elif procesamiento.estado == 'COMPLETADO' %}
+                                    ¡Procesamiento completado exitosamente!
+                                {% elif procesamiento.estado == 'ERROR' %}
+                                    Error en el procesamiento. Revisar detalles abajo.
+                                {% endif %}
+                            </small>
+                        </div>
+                    </div>
+                    
+                    <!-- Mensaje de error -->
+                    {% if procesamiento.estado == 'ERROR' and procesamiento.mensaje_error %}
+                    <div class="alert alert-danger">
+                        <h6><i class="fas fa-exclamation-triangle"></i> Error en el Procesamiento</h6>
+                        <p class="mb-0">{{ procesamiento.mensaje_error }}</p>
+                    </div>
+                    {% endif %}
+                    
+                    <!-- Botones de acción -->
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <a href="{% url 'dashboard' %}" class="btn btn-outline-secondary">
+                                <i class="fas fa-arrow-left"></i> Volver al Dashboard
+                            </a>
+                        </div>
+                        <div>
+                            {% if procesamiento.estado == 'COMPLETADO' and procesamiento.archivo_resultado %}
+                                <a href="{% url 'download_result' procesamiento.id %}" 
+                                   class="btn btn-success">
+                                    <i class="fas fa-download"></i> Descargar PDF
+                                </a>
+                                <a href="{% url 'results' procesamiento.id %}" 
+                                   class="btn btn-primary">
+                                    <i class="fas fa-eye"></i> Ver Resultados
+                                </a>
+                            {% elif procesamiento.estado == 'PROCESANDO' %}
+                                <button class="btn btn-primary" disabled>
+                                    <i class="fas fa-spinner fa-spin"></i> Procesando...
+                                </button>
+                            {% elif procesamiento.estado == 'ERROR' %}
+                                <a href="{% url 'upload_pdf' %}" class="btn btn-warning">
+                                    <i class="fas fa-redo"></i> Intentar de Nuevo
+                                </a>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Vista previa de recibos si ya están disponibles -->
+            {% if recibos and procesamiento.estado == 'COMPLETADO' %}
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h6 class="mb-0">
+                        <i class="fas fa-images"></i> Vista Previa de Recibos Detectados ({{ recibos|length }})
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        {% for recibo in recibos|slice:":6" %}
+                        <div class="col-md-4 mb-3">
+                            <div class="card">
+                                {% if recibo.imagen_recibo %}
+                                <img src="{{ recibo.imagen_recibo.url }}" 
+                                     class="card-img-top" 
+                                     style="height: 150px; object-fit: cover;"
+                                     alt="Recibo {{ recibo.numero_secuencial }}">
+                                {% else %}
+                                <div class="card-img-top d-flex align-items-center justify-content-center bg-light" 
+                                     style="height: 150px;">
+                                    <i class="fas fa-image fa-2x text-muted"></i>
+                                </div>
+                                {% endif %}
+                                <div class="card-body p-2">
+                                    <h6 class="card-title mb-1">Recibo #{{ recibo.numero_secuencial }}</h6>
+                                    <p class="card-text small mb-1">
+                                        <strong>Beneficiario:</strong> {{ recibo.nombre_beneficiario|default:"N/A"|truncatechars:20 }}
+                                    </p>
+                                    <p class="card-text small mb-0">
+                                        <strong>Valor:</strong> 
+                                        {% if recibo.valor %}
+                                            ${{ recibo.valor|floatformat:0 }}
+                                        {% else %}
+                                            N/A
+                                        {% endif %}
+                                    </p>
+                                </div>
+                                <div class="card-footer p-2">
+                                    <a href="{% url 'ver_recibo' recibo.id %}" 
+                                       class="btn btn-sm btn-outline-primary w-100">
+                                        <i class="fas fa-eye"></i> Ver Detalles
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    
+                    {% if recibos|length > 6 %}
+                    <div class="text-center mt-3">
+                        <a href="{% url 'results' procesamiento.id %}" class="btn btn-primary">
+                            <i class="fas fa-th"></i> Ver Todos ({{ recibos|length }})
+                        </a>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+            
+            <!-- Información adicional -->
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h6 class="mb-0">
+                        <i class="fas fa-info-circle"></i> Información del Procesamiento
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6>¿Cómo funciona?</h6>
+                            <ul class="small">
+                                <li><strong>Detección:</strong> Busca el texto "Recibo individual de pagos"</li>
+                                <li><strong>Extracción:</strong> Captura la imagen de cada recibo</li>
+                                <li><strong>Análisis:</strong> Extrae datos como beneficiario y valor</li>
+                                <li><strong>Generación:</strong> Crea PDF con recibos separados</li>
+                            </ul>
+                        </div>
+                        <div class="col-md-6">
+                            <h6>Tiempo estimado</h6>
+                            <ul class="small">
+                                <li><strong>PDF pequeño (<5MB):</strong> 1-2 minutos</li>
+                                <li><strong>PDF mediano (5-20MB):</strong> 2-5 minutos</li>
+                                <li><strong>PDF grande (>20MB):</strong> 5-10 minutos</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+$(document).ready(function() {
+    const status = "{{ procesamiento.estado }}";
+    let progressPercent = 0;
+    
+    // Configurar progreso inicial
+    updateProgress();
+    
+    // Auto-refresh si está procesando
+    if (status === 'PROCESANDO') {
+        setInterval(checkStatus, 5000); // Actualizar cada 5 segundos
+    }
+    
+    function updateProgress() {
+        let percent = 0;
+        let text = '';
+        let iconClass = 'fas fa-cog fa-spin';
+        
+        switch(status) {
+            case 'PENDIENTE':
+                percent = 10;
+                text = 'Esperando para comenzar el procesamiento...';
+                break;
+            case 'PROCESANDO':
+                percent = Math.floor(Math.random() * 40) + 30; // Simular progreso
+                text = 'Detectando y procesando recibos...';
+                break;
+            case 'COMPLETADO':
+                percent = 100;
+                text = '¡Procesamiento completado exitosamente!';
+                iconClass = 'fas fa-check-circle';
+                break;
+            case 'ERROR':
+                percent = 0;
+                text = 'Error en el procesamiento.';
+                iconClass = 'fas fa-exclamation-triangle';
+                break;
+        }
+        
+        $('#progressPercent').text(percent + '%');
+        $('#progressBar').css('width', percent + '%');
+        $('#progressText').text(text);
+        $('#processingIcon').attr('class', iconClass);
+    }
+    
+    function checkStatus() {
+        $.ajax({
+            url: window.location.href,
+            method: 'GET',
+            dataType: 'json',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            success: function(data) {
+                if (data.estado !== status) {
+                    // Estado cambió, recargar página
+                    location.reload();
+                }
+            },
+            error: function() {
+                console.log('Error verificando estado');
+            }
+        });
+    }
+});
+</script>
+{% endblock %}

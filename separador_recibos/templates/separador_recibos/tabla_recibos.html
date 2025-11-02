@@ -1,0 +1,426 @@
+{% extends 'separador_recibos/base.html' %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Estadísticas y controles -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card text-white bg-primary">
+                <div class="card-body">
+                    <h6 class="card-title">Total Recibos</h6>
+                    <h2 class="mb-0">{{ total_recibos }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-white bg-success">
+                <div class="card-body">
+                    <h6 class="card-title">Valor Total</h6>
+                    <h2 class="mb-0">${{ valor_total|floatformat:0|default:"0" }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-white bg-info">
+                <div class="card-body">
+                    <h6 class="card-title">Recibos Validados</h6>
+                    <h2 class="mb-0">{{ recibos_validados }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card">
+                <div class="card-body text-center">
+                    <a href="{% url 'exportar_recibos' %}" class="btn btn-success">
+                        <i class="fas fa-download"></i> Exportar a CSV
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Filtros -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5 class="mb-0">
+                <i class="fas fa-filter"></i> Filtros de Búsqueda
+                <button class="btn btn-sm btn-outline-secondary ms-2" type="button" 
+                        data-bs-toggle="collapse" data-bs-target="#filtrosCollapse">
+                    <i class="fas fa-chevron-down"></i>
+                </button>
+            </h5>
+        </div>
+        <div class="collapse {% if form_filtros.is_bound %}show{% endif %}" id="filtrosCollapse">
+            <div class="card-body">
+                <form method="get" id="filtrosForm">
+                    <div class="row">
+                        <div class="col-md-3">
+                            <div class="mb-3">
+                                <label for="beneficiario" class="form-label">Beneficiario</label>
+                                <input type="text" class="form-control" id="beneficiario" 
+                                       name="beneficiario" value="{{ form_filtros.beneficiario.value|default:'' }}"
+                                       placeholder="Buscar por beneficiario...">
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="mb-3">
+                                <label for="entidad" class="form-label">Entidad Bancaria</label>
+                                {{ form_filtros.entidad }}
+                            </div>
+                        </div>
+                        <div class="col-md-2">
+                            <div class="mb-3">
+                                <label for="valor_minimo" class="form-label">Valor Mínimo</label>
+                                <input type="number" class="form-control" id="valor_minimo" 
+                                       name="valor_minimo" step="0.01"
+                                       value="{{ form_filtros.valor_minimo.value|default:'' }}">
+                            </div>
+                        </div>
+                        <div class="col-md-2">
+                            <div class="mb-3">
+                                <label for="valor_maximo" class="form-label">Valor Máximo</label>
+                                <input type="number" class="form-control" id="valor_maximo" 
+                                       name="valor_maximo" step="0.01"
+                                       value="{{ form_filtros.valor_maximo.value|default:'' }}">
+                            </div>
+                        </div>
+                        <div class="col-md-2">
+                            <div class="mb-3">
+                                <label for="estado" class="form-label">Estado</label>
+                                {{ form_filtros.estado }}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-3">
+                            <div class="mb-3">
+                                <label for="fecha_desde" class="form-label">Fecha Desde</label>
+                                <input type="date" class="form-control" id="fecha_desde" 
+                                       name="fecha_desde"
+                                       value="{{ form_filtros.fecha_desde.value|default:'' }}">
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="mb-3">
+                                <label for="fecha_hasta" class="form-label">Fecha Hasta</label>
+                                <input type="date" class="form-control" id="fecha_hasta" 
+                                       name="fecha_hasta"
+                                       value="{{ form_filtros.fecha_hasta.value|default:'' }}">
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="mb-3">
+                                <label for="orden_por" class="form-label">Ordenar Por</label>
+                                {{ form_filtros.orden_por }}
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="mb-3">
+                                <label for="direccion" class="form-label">Dirección</label>
+                                {{ form_filtros.direccion }}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-search"></i> Aplicar Filtros
+                        </button>
+                        <a href="{% url 'tabla_recibos' %}" class="btn btn-outline-secondary">
+                            <i class="fas fa-times"></i> Limpiar
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Tabla de recibos -->
+    <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">
+                <i class="fas fa-table"></i> Tabla de Recibos
+                {% if form_filtros.is_bound %}
+                <small class="text-muted">(Filtrados)</small>
+                {% endif %}
+            </h5>
+            <div class="btn-group" role="group">
+                <button type="button" class="btn btn-outline-secondary btn-sm" onclick="toggleView('cards')">
+                    <i class="fas fa-th"></i> Tarjetas
+                </button>
+                <button type="button" class="btn btn-outline-secondary btn-sm active" onclick="toggleView('table')">
+                    <i class="fas fa-table"></i> Tabla
+                </button>
+            </div>
+        </div>
+        
+        <div class="card-body">
+            {% if recibos %}
+            <div class="table-responsive" id="tableView">
+                <table class="table table-striped table-hover table-fixed">
+                    <thead class="table-dark">
+                        <tr>
+                            <th width="60">#</th>
+                            <th width="80">Vista Previa</th>
+                            <th width="200">Beneficiario</th>
+                            <th width="120">Valor</th>
+                            <th width="150">Entidad</th>
+                            <th width="120">Cuenta</th>
+                            <th width="120">Referencia</th>
+                            <th width="100">Fecha</th>
+                            <th width="100">Estado</th>
+                            <th width="80">Validado</th>
+                            <th width="120">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for recibo in recibos %}
+                        <tr>
+                            <td>{{ recibo.numero_secuencial }}</td>
+                            <td>
+                                {% if recibo.imagen_recibo %}
+                                <img src="{{ recibo.imagen_recibo.url }}" 
+                                     alt="Recibo {{ recibo.numero_secuencial }}"
+                                     class="img-thumbnail receipt-preview"
+                                     style="width: 50px; height: 50px; object-fit: cover; cursor: pointer;"
+                                     onclick="showImageModal('{{ recibo.imagen_recibo.url }}', 'Recibo #{{ recibo.numero_secuencial }}')">
+                                {% else %}
+                                <span class="text-muted">
+                                    <i class="fas fa-image"></i>
+                                </span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div class="text-truncate" style="max-width: 180px;" 
+                                     title="{{ recibo.nombre_beneficiario|default:'N/A' }}">
+                                    {{ recibo.nombre_beneficiario|default:"N/A" }}
+                                </div>
+                            </td>
+                            <td>
+                                {% if recibo.valor %}
+                                    <span class="fw-bold">${{ recibo.valor|floatformat:0 }}</span>
+                                {% else %}
+                                    <span class="text-muted">N/A</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ recibo.entidad_bancaria|default:"N/A" }}</td>
+                            <td>
+                                <div class="text-truncate" style="max-width: 100px;" 
+                                     title="{{ recibo.numero_cuenta|default:'N/A' }}">
+                                    {{ recibo.numero_cuenta|default:"N/A" }}
+                                </div>
+                            </td>
+                            <td>
+                                <div class="text-truncate" style="max-width: 100px;" 
+                                     title="{{ recibo.referencia|default:'N/A' }}">
+                                    {{ recibo.referencia|default:"N/A" }}
+                                </div>
+                            </td>
+                            <td>
+                                {% if recibo.fecha_aplicacion %}
+                                    {{ recibo.fecha_aplicacion|date:"d/m/Y" }}
+                                {% else %}
+                                    <span class="text-muted">N/A</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <span class="badge bg-success">{{ recibo.estado_pago|default:"N/A" }}</span>
+                            </td>
+                            <td>
+                                {% if recibo.validado %}
+                                    <span class="badge bg-success">Sí</span>
+                                {% else %}
+                                    <span class="badge bg-secondary">No</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div class="btn-group" role="group">
+                                    <a href="{% url 'ver_recibo' recibo.id %}" 
+                                       class="btn btn-sm btn-outline-primary"
+                                       title="Ver detalles">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    <a href="{% url 'editar_recibo' recibo.id %}" 
+                                       class="btn btn-sm btn-outline-secondary"
+                                       title="Editar">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    {% if recibo.imagen_recibo %}
+                                    <a href="{% url 'descargar_imagen' recibo.id %}" 
+                                       class="btn btn-sm btn-outline-info"
+                                       title="Descargar imagen">
+                                        <i class="fas fa-download"></i>
+                                    </a>
+                                    {% endif %}
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            
+            <!-- Vista de tarjetas -->
+            <div class="row d-none" id="cardsView">
+                {% for recibo in recibos %}
+                <div class="col-md-4 col-lg-3 mb-4">
+                    <div class="card h-100">
+                        {% if recibo.imagen_recibo %}
+                        <img src="{{ recibo.imagen_recibo.url }}" 
+                             class="card-img-top" 
+                             style="height: 150px; object-fit: cover;"
+                             alt="Recibo {{ recibo.numero_secuencial }}">
+                        {% else %}
+                        <div class="card-img-top d-flex align-items-center justify-content-center bg-light" 
+                             style="height: 150px;">
+                            <i class="fas fa-image fa-3x text-muted"></i>
+                        </div>
+                        {% endif %}
+                        
+                        <div class="card-body">
+                            <h6 class="card-title">Recibo #{{ recibo.numero_secuencial }}</h6>
+                            <p class="card-text">
+                                <strong>Beneficiario:</strong> {{ recibo.nombre_beneficiario|default:"N/A" }}<br>
+                                <strong>Valor:</strong> 
+                                {% if recibo.valor %}
+                                    ${{ recibo.valor|floatformat:0 }}
+                                {% else %}
+                                    N/A
+                                {% endif %}<br>
+                                <strong>Entidad:</strong> {{ recibo.entidad_bancaria|default:"N/A" }}
+                            </p>
+                        </div>
+                        
+                        <div class="card-footer">
+                            <div class="btn-group w-100">
+                                <a href="{% url 'ver_recibo' recibo.id %}" 
+                                   class="btn btn-sm btn-outline-primary">
+                                    <i class="fas fa-eye"></i> Ver
+                                </a>
+                                <a href="{% url 'editar_recibo' recibo.id %}" 
+                                   class="btn btn-sm btn-outline-secondary">
+                                    <i class="fas fa-edit"></i> Editar
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            
+            {% else %}
+            <div class="text-center py-5">
+                <i class="fas fa-search fa-3x text-muted mb-3"></i>
+                <h5 class="text-muted">No se encontraron recibos</h5>
+                <p class="text-muted">
+                    {% if form_filtros.is_bound %}
+                        Intenta ajustar los filtros de búsqueda
+                    {% else %}
+                        Sube tu primer archivo PDF para ver los recibos
+                    {% endif %}
+                </p>
+                {% if form_filtros.is_bound %}
+                <a href="{% url 'tabla_recibos' %}" class="btn btn-outline-secondary">
+                    <i class="fas fa-times"></i> Limpiar Filtros
+                </a>
+                {% else %}
+                <a href="{% url 'upload_pdf' %}" class="btn btn-primary">
+                    <i class="fas fa-upload"></i> Subir PDF
+                </a>
+                {% endif %}
+            </div>
+            {% endif %}
+        </div>
+        
+        <!-- Paginación -->
+        {% if is_paginated %}
+        <div class="card-footer">
+            <nav aria-label="Navegación de páginas">
+                <ul class="pagination justify-content-center mb-0">
+                    {% if page_obj.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page=1{% if request.GET.urlencode %}&{{ request.GET.urlencode|slice:':-1' }}{% endif %}">
+                            <i class="fas fa-angle-double-left"></i>
+                        </a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if request.GET.urlencode %}&{{ request.GET.urlencode|slice:':-1' }}{% endif %}">
+                            <i class="fas fa-angle-left"></i> Anterior
+                        </a>
+                    </li>
+                    {% endif %}
+                    
+                    <li class="page-item active">
+                        <span class="page-link">
+                            Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}
+                        </span>
+                    </li>
+                    
+                    {% if page_obj.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if request.GET.urlencode %}&{{ request.GET.urlencode|slice:':-1' }}{% endif %}">
+                            Siguiente <i class="fas fa-angle-right"></i>
+                        </a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% if request.GET.urlencode %}&{{ request.GET.urlencode|slice:':-1' }}{% endif %}">
+                            <i class="fas fa-angle-double-right"></i>
+                        </a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </nav>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Modal para mostrar imagen -->
+<div class="modal fade" id="imageModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="imageModalTitle">Vista Previa</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body text-center">
+                <img id="modalImage" src="" class="img-fluid" alt="Vista previa">
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function toggleView(view) {
+    const tableView = document.getElementById('tableView');
+    const cardsView = document.getElementById('cardsView');
+    const buttons = document.querySelectorAll('.btn-group .btn');
+    
+    buttons.forEach(btn => btn.classList.remove('active'));
+    
+    if (view === 'table') {
+        tableView.classList.remove('d-none');
+        cardsView.classList.add('d-none');
+        buttons[1].classList.add('active');
+    } else {
+        tableView.classList.add('d-none');
+        cardsView.classList.remove('d-none');
+        buttons[0].classList.add('active');
+    }
+}
+
+function showImageModal(imageSrc, title) {
+    document.getElementById('modalImage').src = imageSrc;
+    document.getElementById('imageModalTitle').textContent = title;
+    new bootstrap.Modal(document.getElementById('imageModal')).show();
+}
+
+// Auto-submit form when filters change
+document.querySelectorAll('#filtrosForm select').forEach(select => {
+    select.addEventListener('change', function() {
+        document.getElementById('filtrosForm').submit();
+    });
+});
+</script>
+{% endblock %}

@@ -1,0 +1,1 @@
+# separador_recibos/migrations/__init__.py
