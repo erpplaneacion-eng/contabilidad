@@ -190,7 +190,7 @@ class PDFProcessor:
             'valor': r'Valor:\s*([\d.,]+)',
             'referencia': r'Referencia:\s*(\w+)',
             'documento': r'Documento:\s*(\d+)',
-            'beneficiario': r'Nombre de beneficiario:\s*([A-ZÁÉÍÓÚÑÜ\s]+,)',
+            'beneficiario': r'Nombre de beneficiario:\s*(.*?)\s*Documento:',
             'numero_cuenta': r'Número de cuenta:\s*([\d-]+)',
             'tipo_cuenta': r'Tipo de cuenta:\s*(\w+)',
             'fecha_aplicacion': r'Fecha de aplicación:\s*(\d{1,2}\s+de\s+\w+\s+de\s+\d{4})',
@@ -204,8 +204,6 @@ class PDFProcessor:
                 valor_extraido = match.group(1).strip()
                 if campo == 'valor':
                     info[campo] = self._limpiar_valor(valor_extraido)
-                elif campo == 'beneficiario':
-                    info[campo] = valor_extraido.rstrip(',')
                 elif campo == 'fecha_aplicacion':
                     info['fecha'] = self._limpiar_fecha(valor_extraido)
                 else:
