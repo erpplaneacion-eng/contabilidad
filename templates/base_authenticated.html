@@ -1,0 +1,90 @@
+{% extends "base.html" %}
+
+{% block body_content %}
+<div class="wrapper d-flex">
+    <!-- Sidebar -->
+    {% include 'components/sidebar.html' %}
+
+    <!-- Contenido principal -->
+    <div class="main-content flex-grow-1">
+        <!-- Navbar superior -->
+        {% include 'components/navbar.html' %}
+
+        <!-- Mensajes flash -->
+        {% include 'components/messages.html' %}
+
+        <!-- Breadcrumbs -->
+        {% block breadcrumbs %}
+        {% include 'components/breadcrumbs.html' %}
+        {% endblock %}
+
+        <!-- Contenido de la página -->
+        <div class="content-wrapper p-4">
+            {% block content %}
+            {% endblock %}
+        </div>
+    </div>
+</div>
+
+<style>
+    .wrapper {
+        min-height: 100vh;
+    }
+
+    .main-content {
+        background-color: #f8f9fa;
+        overflow-x: hidden;
+    }
+
+    .content-wrapper {
+        min-height: calc(100vh - 60px); /* 60px = altura del navbar */
+    }
+
+    /* Responsive: ocultar sidebar en móviles */
+    @media (max-width: 768px) {
+        .sidebar {
+            position: fixed;
+            left: -250px;
+            transition: left 0.3s ease;
+            z-index: 1000;
+        }
+
+        .sidebar.show {
+            left: 0;
+        }
+
+        .sidebar-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 999;
+        }
+
+        .sidebar-overlay.show {
+            display: block;
+        }
+    }
+</style>
+
+{% block extra_js %}
+{{ block.super }}
+<script>
+    // Toggle sidebar en móvil
+    $(document).ready(function() {
+        $('#sidebarToggle').on('click', function() {
+            $('.sidebar').toggleClass('show');
+            $('.sidebar-overlay').toggleClass('show');
+        });
+
+        $('.sidebar-overlay').on('click', function() {
+            $('.sidebar').removeClass('show');
+            $('.sidebar-overlay').removeClass('show');
+        });
+    });
+</script>
+{% endblock %}
+{% endblock %}

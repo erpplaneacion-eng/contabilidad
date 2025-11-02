@@ -4,18 +4,18 @@ from . import views
 app_name = 'proveedores'
 
 urlpatterns = [
-    # Formulario de registro de proveedor
-    path('registro/', views.proveedor_form_view, name='registro'),
+    # Formulario de registro público de proveedor (sin autenticación)
+    path('registro-publico/', views.proveedor_form_view, name='registro_publico'),
 
-    # Formulario de actualización de proveedor
-    path('actualizar/<int:pk>/', views.proveedor_update_view, name='actualizar'),
+    # Formulario de actualización de proveedor (requiere autenticación)
+    path('<int:pk>/editar/', views.proveedor_update_view, name='editar'),
 
-    # Página de éxito
+    # Página de éxito después del registro
     path('success/<int:pk>/', views.success_view, name='success'),
 
-    # Lista de proveedores (solo para staff)
-    path('lista/', views.ProveedorListView.as_view(), name='lista'),
+    # Lista de proveedores (requiere autenticación) - URL principal
+    path('', views.ProveedorListView.as_view(), name='lista'),
 
-    # Detalle de proveedor
-    path('detalle/<int:pk>/', views.ProveedorDetailView.as_view(), name='detalle'),
+    # Detalle de proveedor (requiere autenticación)
+    path('<int:pk>/', views.ProveedorDetailView.as_view(), name='detalle'),
 ]

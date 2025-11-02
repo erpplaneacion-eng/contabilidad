@@ -28,13 +28,17 @@ urlpatterns = [
     path('login/', auth_views.LoginView.as_view(), name='login'),
     path('logout/', auth_views.LogoutView.as_view(next_page='/login/'), name='logout'),
 
+    # URLs de core (dashboard principal)
+    path('dashboard/', include('core.urls')),
+
     # URLs de proveedores
-    # URLs del Separador de Recibos PDF
-    path('separador/', include('separador_recibos.urls')),
     path('proveedores/', include('proveedores.urls')),
 
-    # Redirigir la raíz al formulario de registro
-    path('', RedirectView.as_view(url='/proveedores/registro/', permanent=False)),
+    # URLs del Separador de Recibos PDF
+    path('separador/', include('separador_recibos.urls')),
+
+    # Redirigir la raíz al login
+    path('', RedirectView.as_view(url='/login/', permanent=False)),
 ]
 
 # Servir archivos media en modo desarrollo

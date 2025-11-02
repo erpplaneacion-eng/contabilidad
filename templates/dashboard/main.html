@@ -1,0 +1,288 @@
+{% extends "base_authenticated.html" %}
+
+{% block title %}Dashboard Principal - Sistema de Gestión Contable{% endblock %}
+
+{% block page_title %}
+    <i class="fas fa-tachometer-alt me-2"></i> Dashboard Principal
+{% endblock %}
+
+{% block content %}
+<div class="dashboard-content">
+    <!-- Título de bienvenida -->
+    <div class="mb-4">
+        <h2 class="mb-1">
+            ¡Bienvenido, {{ user.get_full_name|default:user.username }}!
+        </h2>
+        <p class="text-muted">
+            {% if user_profile %}
+                {{ user_profile.get_rol_display }} - {{ user_profile.get_area_display }}
+            {% endif %}
+        </p>
+    </div>
+
+    <!-- Tarjetas de estadísticas generales -->
+    <div class="row g-4 mb-4">
+        <!-- Proveedores -->
+        {% if tiene_acceso_proveedores or user.is_staff %}
+        <div class="col-md-6 col-xl-3">
+            <div class="card border-0 shadow-sm h-100" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                <div class="card-body text-white">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-white-50 mb-1">Total Proveedores</h6>
+                            <h2 class="mb-0">{{ total_proveedores|default:0 }}</h2>
+                            <small class="text-white-50">
+                                +{{ proveedores_mes|default:0 }} este mes
+                            </small>
+                        </div>
+                        <div class="fs-1 opacity-50">
+                            <i class="fas fa-users"></i>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-footer bg-transparent border-0">
+                    <a href="{% url 'proveedores:lista' %}" class="text-white text-decoration-none small">
+                        Ver todos <i class="fas fa-arrow-right ms-1"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Procesamientos -->
+        {% if tiene_acceso_separador or user.is_staff %}
+        <div class="col-md-6 col-xl-3">
+            <div class="card border-0 shadow-sm h-100" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
+                <div class="card-body text-white">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-white-50 mb-1">Procesamientos</h6>
+                            <h2 class="mb-0">{{ total_procesamientos|default:0 }}</h2>
+                            <small class="text-white-50">
+                                +{{ procesamientos_mes|default:0 }} este mes
+                            </small>
+                        </div>
+                        <div class="fs-1 opacity-50">
+                            <i class="fas fa-file-pdf"></i>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-footer bg-transparent border-0">
+                    <a href="{% url 'separador_recibos:dashboard' %}" class="text-white text-decoration-none small">
+                        Ver dashboard <i class="fas fa-arrow-right ms-1"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recibos detectados -->
+        <div class="col-md-6 col-xl-3">
+            <div class="card border-0 shadow-sm h-100" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">
+                <div class="card-body text-white">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-white-50 mb-1">Recibos Detectados</h6>
+                            <h2 class="mb-0">{{ total_recibos|default:0 }}</h2>
+                            <small class="text-white-50">
+                                En todos los procesamientos
+                            </small>
+                        </div>
+                        <div class="fs-1 opacity-50">
+                            <i class="fas fa-receipt"></i>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-footer bg-transparent border-0">
+                    <a href="{% url 'separador_recibos:tabla_recibos' %}" class="text-white text-decoration-none small">
+                        Ver tabla <i class="fas fa-arrow-right ms-1"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Valor total procesado -->
+        <div class="col-md-6 col-xl-3">
+            <div class="card border-0 shadow-sm h-100" style="background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);">
+                <div class="card-body text-white">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-white-50 mb-1">Valor Total</h6>
+                            <h2 class="mb-0">${{ valor_total_procesado|floatformat:0|default:0 }}</h2>
+                            <small class="text-white-50">
+                                En recibos procesados
+                            </small>
+                        </div>
+                        <div class="fs-1 opacity-50">
+                            <i class="fas fa-dollar-sign"></i>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-footer bg-transparent border-0">
+                    <a href="{% url 'separador_recibos:exportar_recibos' %}" class="text-white text-decoration-none small">
+                        Exportar CSV <i class="fas fa-download ms-1"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Secciones de actividad reciente -->
+    <div class="row g-4">
+        <!-- Proveedores recientes -->
+        {% if tiene_acceso_proveedores or user.is_staff %}
+        <div class="col-lg-6">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white border-bottom">
+                    <h5 class="mb-0">
+                        <i class="fas fa-users me-2 text-primary"></i>
+                        Proveedores Recientes
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if proveedores_recientes %}
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Nombre/Razón Social</th>
+                                    <th>NIT/ID</th>
+                                    <th>Fecha</th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for proveedor in proveedores_recientes %}
+                                <tr>
+                                    <td>{{ proveedor.nombre_razon_social|truncatechars:30 }}</td>
+                                    <td>{{ proveedor.numero_identificacion }}</td>
+                                    <td>
+                                        <small class="text-muted">{{ proveedor.fecha_creacion|date:"d/m/Y" }}</small>
+                                    </td>
+                                    <td>
+                                        <a href="{% url 'proveedores:detalle' proveedor.pk %}" class="btn btn-sm btn-outline-primary">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <p class="text-muted mb-0">
+                        <i class="fas fa-info-circle me-2"></i>
+                        No hay proveedores registrados aún.
+                    </p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Procesamientos recientes -->
+        {% if tiene_acceso_separador or user.is_staff %}
+        <div class="col-lg-6">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white border-bottom">
+                    <h5 class="mb-0">
+                        <i class="fas fa-file-pdf me-2 text-danger"></i>
+                        Procesamientos Recientes
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if procesamientos_recientes %}
+                    <div class="list-group list-group-flush">
+                        {% for procesamiento in procesamientos_recientes %}
+                        <div class="list-group-item px-0">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h6 class="mb-1">
+                                        {{ procesamiento.archivo_original.name|truncatechars:35 }}
+                                    </h6>
+                                    <small class="text-muted">
+                                        {{ procesamiento.fecha_subida|date:"d/m/Y H:i" }} -
+                                        {% if procesamiento.total_recibos %}
+                                            {{ procesamiento.total_recibos }} recibos
+                                        {% else %}
+                                            Sin recibos
+                                        {% endif %}
+                                    </small>
+                                </div>
+                                <div>
+                                    {% if procesamiento.estado == 'COMPLETADO' %}
+                                        <span class="badge bg-success">
+                                            <i class="fas fa-check me-1"></i> Completado
+                                        </span>
+                                    {% elif procesamiento.estado == 'PROCESANDO' %}
+                                        <span class="badge bg-warning">
+                                            <i class="fas fa-spinner me-1"></i> Procesando
+                                        </span>
+                                    {% elif procesamiento.estado == 'ERROR' %}
+                                        <span class="badge bg-danger">
+                                            <i class="fas fa-times me-1"></i> Error
+                                        </span>
+                                    {% else %}
+                                        <span class="badge bg-secondary">
+                                            <i class="fas fa-clock me-1"></i> Pendiente
+                                        </span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <p class="text-muted mb-0">
+                        <i class="fas fa-info-circle me-2"></i>
+                        No hay procesamientos aún.
+                    </p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Acciones rápidas -->
+    <div class="row g-4 mt-4">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white border-bottom">
+                    <h5 class="mb-0">
+                        <i class="fas fa-bolt me-2 text-warning"></i>
+                        Acciones Rápidas
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        {% if tiene_acceso_proveedores or user.is_staff %}
+                        <div class="col-md-4">
+                            <a href="{% url 'proveedores:lista' %}" class="btn btn-outline-primary w-100 py-3">
+                                <i class="fas fa-list fa-2x d-block mb-2"></i>
+                                Ver Lista de Proveedores
+                            </a>
+                        </div>
+                        {% endif %}
+
+                        {% if tiene_acceso_separador or user.is_staff %}
+                        <div class="col-md-4">
+                            <a href="{% url 'separador_recibos:upload_pdf' %}" class="btn btn-outline-success w-100 py-3">
+                                <i class="fas fa-cloud-upload-alt fa-2x d-block mb-2"></i>
+                                Subir Nuevo PDF
+                            </a>
+                        </div>
+                        <div class="col-md-4">
+                            <a href="{% url 'separador_recibos:tabla_recibos' %}" class="btn btn-outline-info w-100 py-3">
+                                <i class="fas fa-table fa-2x d-block mb-2"></i>
+                                Ver Tabla de Recibos
+                            </a>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

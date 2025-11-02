@@ -69,8 +69,9 @@ def proveedor_form_view(request):
     return render(request, 'proveedores/formulario_proveedor.html', context)
 
 
+@login_required
 def proveedor_update_view(request, pk):
-    """Vista para actualizar un proveedor existente"""
+    """Vista para actualizar un proveedor existente (requiere autenticación)"""
 
     proveedor = get_object_or_404(Proveedor, pk=pk)
 

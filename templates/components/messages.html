@@ -1,0 +1,64 @@
+<!-- Mensajes flash de Django -->
+{% if messages %}
+<div class="messages-container px-4 pt-3">
+    {% for message in messages %}
+        <div class="alert alert-{{ message.tags|default:'info' }} alert-dismissible fade show" role="alert">
+            <!-- Icono según el tipo de mensaje -->
+            {% if message.tags == 'success' %}
+                <i class="fas fa-check-circle me-2"></i>
+            {% elif message.tags == 'error' or message.tags == 'danger' %}
+                <i class="fas fa-exclamation-circle me-2"></i>
+            {% elif message.tags == 'warning' %}
+                <i class="fas fa-exclamation-triangle me-2"></i>
+            {% else %}
+                <i class="fas fa-info-circle me-2"></i>
+            {% endif %}
+
+            <!-- Mensaje -->
+            {{ message }}
+
+            <!-- Botón de cerrar -->
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    {% endfor %}
+</div>
+
+<script>
+    // Auto-dismiss de mensajes después de 5 segundos
+    $(document).ready(function() {
+        setTimeout(function() {
+            $('.alert').each(function() {
+                $(this).alert('close');
+            });
+        }, 5000);
+    });
+</script>
+{% endif %}
+
+<style>
+    .messages-container {
+        position: relative;
+        z-index: 1050;
+    }
+
+    .alert {
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        border-left-width: 4px;
+    }
+
+    .alert-success {
+        border-left-color: #198754;
+    }
+
+    .alert-danger {
+        border-left-color: #dc3545;
+    }
+
+    .alert-warning {
+        border-left-color: #ffc107;
+    }
+
+    .alert-info {
+        border-left-color: #0dcaf0;
+    }
+</style>

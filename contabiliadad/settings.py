@@ -40,6 +40,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'core',  # ✅ App core para funcionalidad compartida
     'proveedores',
     'separador_recibos',  # ✅ ESTA LÍNEA ES CRÍTICA - NO LA BORRES
 ]
@@ -59,7 +60,7 @@ ROOT_URLCONF = 'contabiliadad.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [BASE_DIR / 'templates'],  # ✅ Directorio de templates globales
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -67,6 +68,7 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'core.context_processors.user_info',  # ✅ Context processor personalizado
             ],
         },
     },
@@ -140,7 +142,7 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # Login/Logout URLs
 LOGIN_URL = '/login/'
-LOGIN_REDIRECT_URL = '/proveedores/lista/'
+LOGIN_REDIRECT_URL = '/dashboard/'  # ✅ Redirigir al dashboard principal después de login
 LOGOUT_REDIRECT_URL = '/login/'
 
 # Configuración adicional para Separador de Recibos PDF

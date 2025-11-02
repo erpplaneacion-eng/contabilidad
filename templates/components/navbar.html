@@ -1,0 +1,84 @@
+<!-- Navbar superior -->
+<nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm">
+    <div class="container-fluid">
+        <!-- Toggle para sidebar en móvil -->
+        <button class="btn btn-link d-lg-none" id="sidebarToggle" type="button">
+            <i class="fas fa-bars"></i>
+        </button>
+
+        <!-- Título de la página actual -->
+        <span class="navbar-brand mb-0 h5">
+            {% block page_title %}{% endblock %}
+        </span>
+
+        <!-- Espacio flexible -->
+        <div class="ms-auto d-flex align-items-center">
+            <!-- Información del usuario -->
+            <div class="dropdown">
+                <button class="btn btn-link text-decoration-none dropdown-toggle d-flex align-items-center" type="button" id="userDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                    <div class="user-avatar me-2">
+                        <i class="fas fa-user-circle fa-2x text-primary"></i>
+                    </div>
+                    <div class="user-info text-start d-none d-md-block">
+                        <div class="fw-bold">{{ user.get_full_name|default:user.username }}</div>
+                        <small class="text-muted">
+                            {% if user_rol %}
+                                {{ user_rol|title }}
+                                {% if user_area %}
+                                    - {{ user_area|title }}
+                                {% endif %}
+                            {% else %}
+                                Usuario
+                            {% endif %}
+                        </small>
+                    </div>
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
+                    <li>
+                        <a class="dropdown-item" href="#">
+                            <i class="fas fa-user me-2"></i>
+                            Perfil
+                        </a>
+                    </li>
+                    <li>
+                        <a class="dropdown-item" href="#">
+                            <i class="fas fa-cog me-2"></i>
+                            Configuración
+                        </a>
+                    </li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li>
+                        <a class="dropdown-item text-danger" href="{% url 'logout' %}">
+                            <i class="fas fa-sign-out-alt me-2"></i>
+                            Cerrar Sesión
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</nav>
+
+<style>
+    .navbar {
+        height: 60px;
+    }
+
+    #userDropdown {
+        border: none;
+        color: #212529;
+    }
+
+    #userDropdown:hover {
+        background-color: transparent;
+        color: #0d6efd;
+    }
+
+    .user-avatar {
+        line-height: 1;
+    }
+
+    .user-info {
+        line-height: 1.2;
+    }
+</style>
