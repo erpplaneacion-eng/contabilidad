@@ -56,16 +56,13 @@
             <div class="card border-0 shadow-sm" style="border-left: 4px solid #198754 !important;">
                 <div class="card-body">
                     <div class="d-flex justify-content-between align-items-center">
-                        <div class="flex-grow-1">
+                        <div>
                             <p class="text-muted mb-1 small">Distribución</p>
-                            <div class="d-flex align-items-center gap-3">
-                                <div>
-                                    <span class="badge bg-success">Jurídica: {{ total_juridica|default:0 }}</span>
-                                </div>
-                                <div>
-                                    <span class="badge bg-info">Natural: {{ total_natural|default:0 }}</span>
-                                </div>
-                            </div>
+                            <h3 class="mb-0">
+                                <span class="badge bg-success me-1">{{ total_juridica|default:0 }}</span>
+                                <span class="badge bg-info">{{ total_natural|default:0 }}</span>
+                            </h3>
+                            <small class="text-muted">Jurídica / Natural</small>
                         </div>
                         <div class="fs-2 text-success opacity-50">
                             <i class="fas fa-chart-pie"></i>

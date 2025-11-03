@@ -168,8 +168,13 @@ class ProveedorListView(LoginRequiredMixin, ListView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         # Estadísticas por naturaleza jurídica
-        context['total_juridica'] = Proveedor.objects.filter(naturaleza_juridica='JURIDICA').count()
-        context['total_natural'] = Proveedor.objects.filter(naturaleza_juridica='NATURAL').count()
+        # Personas Jurídicas incluyen: PERSONA_JURIDICA y SOCIEDAD
+        context['total_juridica'] = Proveedor.objects.filter(
+            naturaleza_juridica__in=['PERSONA_JURIDICA', 'SOCIEDAD']
+        ).count()
+        context['total_natural'] = Proveedor.objects.filter(
+            naturaleza_juridica='PERSONA_NATURAL'
+        ).count()
         return context
 
 
