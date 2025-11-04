@@ -125,6 +125,7 @@ class Impuesto(models.Model):
         ('COMPRAS', 'Retención en la Fuente por Compras'),
         ('SERVICIOS', 'Retención en la Fuente por Servicios'),
         ('TRANSPORTE', 'Retención en la Fuente por Transporte'),
+        ('ICA', 'Código Actividad Económica (CIIU)'),
         ('OTRO', 'Retención en la Fuente por Otro Concepto'),
     ]
 

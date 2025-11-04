@@ -9,6 +9,26 @@
     {% endif %}
 {% endblock %}
 
+{% block extra_css %}
+<style>
+    .signature-pad-container {
+        border: 1px dashed #ccc;
+        border-radius: 5px;
+        padding: 10px;
+        margin-top: 10px;
+        position: relative;
+    }
+    .signature-pad-canvas {
+        width: 100%;
+        height: 200px;
+        background-color: #f8f9fa;
+    }
+    .signature-pad-actions {
+        margin-top: 10px;
+    }
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="main-container">
     <div class="form-header">
@@ -44,9 +64,7 @@
 
             <!-- SECCIÓN 1: INFORMACIÓN GENERAL -->
             <div class="form-section">
-                <h2 class="section-title">
-                    <i class="fas fa-info-circle"></i> Información de Su Empresa
-                </h2>
+                <h2 class="section-title"><i class="fas fa-info-circle"></i> Información de Su Empresa</h2>
                 <p class="text-muted mb-4">Por favor ingrese los datos principales de su empresa o negocio</p>
 
                 <div class="row">
@@ -172,9 +190,7 @@
 
             <!-- SECCIÓN 2: OTROS CONTACTOS -->
             <div class="form-section">
-                <h2 class="section-title">
-                    <i class="fas fa-address-book"></i> Personas de Contacto en Su Empresa
-                </h2>
+                <h2 class="section-title"><i class="fas fa-address-book"></i> Personas de Contacto</h2>
                 <p class="text-muted mb-3">
                     <i class="fas fa-lightbulb"></i>
                     <strong>Opcional:</strong> Puede agregar contactos adicionales de su empresa (gerente, contador, etc.)
@@ -265,109 +281,126 @@
                 </div>
             </div>
 
-            <!-- SECCIÓN 3: IMPUESTOS -->
+            <!-- SECCIÓN 3: IMPUESTOS (NUEVA TABLA) -->
             <div class="form-section">
-                <h2 class="section-title">
-                    <i class="fas fa-receipt"></i> Información Tributaria
-                </h2>
+                <h2 class="section-title"><i class="fas fa-receipt"></i> Información Tributaria</h2>
                 <p class="text-muted mb-4">
                     <i class="fas fa-info-circle"></i>
-                    Por favor indique si su empresa está sujeta a retención en la fuente y los porcentajes aplicables.
-                    Esta información nos ayuda a realizar los procesos de facturación correctamente.
+                    Por favor indique qué retenciones aplican a su empresa y los porcentajes o tarifas correspondientes.
                 </p>
 
-                <div id="impuestos-container">
-                    {{ impuesto_formset.management_form }}
-                    {% for form in impuesto_formset %}
-                        <div class="impuesto-group">
-                            <h5 class="mb-3">Impuesto {{ forloop.counter }}</h5>
-
-                            {{ form.id }}
-                            {% if form.DELETE %}
-                                {{ form.DELETE }}
-                            {% endif %}
-
-                            <div class="row">
-                                <div class="col-md-4 mb-3">
-                                    <label class="form-label">{{ form.tipo_impuesto.label }}</label>
-                                    {{ form.tipo_impuesto }}
-                                    {% if form.tipo_impuesto.errors %}
-                                        <div class="text-danger">{{ form.tipo_impuesto.errors }}</div>
-                                    {% endif %}
+                <table class="table table-bordered table-hover">
+                    <thead class="table-light">
+                        <tr>
+                            <th style="width: 50%;">Tipo Retención</th>
+                            <th style="width: 15%; text-align: center;">Aplica</th>
+                            <th style="width: 35%; text-align: center;">Porcentaje (%) / Tarifa (‰)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Fila Compras -->
+                        <tr>
+                            <td>Retención en la Fuente por Compras</td>
+                            <td style="text-align: center;">{{ impuestos_form.aplica_COMPRAS }}</td>
+                            <td>
+                                <div class="input-group">
+                                    {{ impuestos_form.porcentaje_COMPRAS }}
+                                    <span class="input-group-text">%</span>
                                 </div>
-
-                                <div class="col-md-2 mb-3">
-                                    <label class="form-label">{{ form.aplica.label }}</label>
-                                    <div class="form-check">
-                                        {{ form.aplica }}
-                                    </div>
-                                    {% if form.aplica.errors %}
-                                        <div class="text-danger">{{ form.aplica.errors }}</div>
-                                    {% endif %}
+                            </td>
+                        </tr>
+                        <!-- Fila Servicios -->
+                        <tr>
+                            <td>Retención en la Fuente por Servicios</td>
+                            <td style="text-align: center;">{{ impuestos_form.aplica_SERVICIOS }}</td>
+                            <td>
+                                <div class="input-group">
+                                    {{ impuestos_form.porcentaje_SERVICIOS }}
+                                    <span class="input-group-text">%</span>
                                 </div>
-
-                                <div class="col-md-3 mb-3">
-                                    <label class="form-label">{{ form.porcentaje.label }}</label>
-                                    {{ form.porcentaje }}
-                                    {% if form.porcentaje.errors %}
-                                        <div class="text-danger">{{ form.porcentaje.errors }}</div>
-                                    {% endif %}
+                            </td>
+                        </tr>
+                        <!-- Fila Transporte -->
+                        <tr>
+                            <td>Retención en la Fuente por Transporte</td>
+                            <td style="text-align: center;">{{ impuestos_form.aplica_TRANSPORTE }}</td>
+                            <td>
+                                <div class="input-group">
+                                    {{ impuestos_form.porcentaje_TRANSPORTE }}
+                                    <span class="input-group-text">%</span>
                                 </div>
-
-                                <div class="col-md-3 mb-3">
-                                    <label class="form-label">{{ form.tarifa.label }}</label>
-                                    {{ form.tarifa }}
-                                    {% if form.tarifa.errors %}
-                                        <div class="text-danger">{{ form.tarifa.errors }}</div>
-                                    {% endif %}
+                            </td>
+                        </tr>
+                        <!-- Fila ICA -->
+                        <tr>
+                            <td>Código Actividad Económica (CIIU)</td>
+                            <td style="text-align: center;">{{ impuestos_form.aplica_ICA }}</td>
+                            <td>
+                                <div class="input-group">
+                                    {{ impuestos_form.tarifa_ICA }}
+                                    <span class="input-group-text">‰</span>
                                 </div>
-                            </div>
-
-                            <div class="row">
-                                <div class="col-md-4 mb-3">
-                                    <label class="form-label">{{ form.codigo_actividad_economica.label }}</label>
-                                    {{ form.codigo_actividad_economica }}
-                                    {% if form.codigo_actividad_economica.errors %}
-                                        <div class="text-danger">{{ form.codigo_actividad_economica.errors }}</div>
-                                    {% endif %}
+                            </td>
+                        </tr>
+                        <!-- Fila Otro -->
+                        <tr>
+                            <td>Retención en la Fuente por Otro Concepto</td>
+                            <td style="text-align: center;">{{ impuestos_form.aplica_OTRO }}</td>
+                            <td>
+                                <div class="input-group">
+                                    {{ impuestos_form.porcentaje_OTRO }}
+                                    <span class="input-group-text">%</span>
                                 </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
 
-                                <div class="col-md-4 mb-3">
-                                    <label class="form-label">{{ form.municipio.label }}</label>
-                                    {{ form.municipio }}
-                                    {% if form.municipio.errors %}
-                                        <div class="text-danger">{{ form.municipio.errors }}</div>
-                                    {% endif %}
-                                </div>
-
-                                <div class="col-md-4 mb-3">
-                                    <label class="form-label">{{ form.resolucion_exento.label }}</label>
-                                    {{ form.resolucion_exento }}
-                                    {% if form.resolucion_exento.errors %}
-                                        <div class="text-danger">{{ form.resolucion_exento.errors }}</div>
-                                    {% endif %}
-                                </div>
-                            </div>
-
-                            <div class="row">
-                                <div class="col-md-12 mb-3">
-                                    <label class="form-label">{{ form.otro_concepto.label }}</label>
-                                    {{ form.otro_concepto }}
-                                    {% if form.otro_concepto.errors %}
-                                        <div class="text-danger">{{ form.otro_concepto.errors }}</div>
-                                    {% endif %}
-                                </div>
-                            </div>
+                <!-- Campos Condicionales -->
+                <div id="conditional-ICA" class="conditional-fields" style="display:none;">
+                    <h5 class="mt-4">Detalles de Actividad Económica (CIIU)</h5>
+                    <div class="row p-3 border rounded">
+                         <div class="col-md-6 mb-3">
+                            <label class="form-label" for="{{ impuestos_form.codigo_ciiu_ICA.id_for_label }}">{{ impuestos_form.codigo_ciiu_ICA.label }}</label>
+                            {{ impuestos_form.codigo_ciiu_ICA }}
                         </div>
-                    {% endfor %}
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label" for="{{ impuestos_form.municipio_ICA.id_for_label }}">{{ impuestos_form.municipio_ICA.label }}</label>
+                            {{ impuestos_form.municipio_ICA }}
+                        </div>
+                    </div>
+                </div>
+                <div id="conditional-OTRO" class="conditional-fields" style="display:none;">
+                    <h5 class="mt-4">Detalles de Otro Concepto</h5>
+                    <div class="row p-3 border rounded">
+                        <div class="col-md-12 mb-3">
+                             <label class="form-label" for="{{ impuestos_form.otro_concepto_OTRO.id_for_label }}">{{ impuestos_form.otro_concepto_OTRO.label }}</label>
+                            {{ impuestos_form.otro_concepto_OTRO }}
+                        </div>
+                    </div>
+                </div>
+
+
+                <!-- Sección de Exención -->
+                <div class="mt-4 p-3 border rounded">
+                    <h5 class="mb-3">Exención de Retención</h5>
+                    <p class="text-muted">Si es exento de alguna retención, indique los detalles a continuación.</p>
+                     <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label" for="{{ impuestos_form.resolucion_exento_numero.id_for_label }}">{{ impuestos_form.resolucion_exento_numero.label }}</label>
+                           {{ impuestos_form.resolucion_exento_numero }}
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label" for="{{ impuestos_form.resolucion_exento_fecha.id_for_label }}">{{ impuestos_form.resolucion_exento_fecha.label }}</label>
+                            {{ impuestos_form.resolucion_exento_fecha }}
+                        </div>
+                    </div>
                 </div>
             </div>
 
             <!-- SECCIÓN 4: CONDICIONES DE PAGO -->
             <div class="form-section">
-                <h2 class="section-title">
-                    <i class="fas fa-credit-card"></i> Sus Condiciones de Pago
-                </h2>
+                 <h2 class="section-title"><i class="fas fa-credit-card"></i> Sus Condiciones de Pago</h2>
                 <p class="text-muted mb-4">
                     <i class="fas fa-calendar-alt"></i>
                     Indique cuál es su política de pago preferida (contado, crédito a 30 días, etc.)
@@ -399,9 +432,7 @@
 
             <!-- SECCIÓN 5: DOCUMENTOS REQUERIDOS -->
             <div class="form-section">
-                <h2 class="section-title">
-                    <i class="fas fa-file-upload"></i> Documentos de Su Empresa
-                </h2>
+                <h2 class="section-title"><i class="fas fa-file-upload"></i> Documentos de Su Empresa</h2>
                 <p class="text-muted mb-3">
                     <i class="fas fa-upload"></i>
                     Por favor adjunte los siguientes documentos de su empresa.
@@ -410,153 +441,111 @@
                 <div class="alert alert-info">
                     <i class="fas fa-info-circle"></i>
                     <strong>Nota:</strong> Estos documentos son necesarios para completar su registro como proveedor.
-                    Si no los tiene en este momento, puede guardar el formulario y cargarlos más tarde.
                 </div>
 
                 <div class="row">
                     <div class="col-md-6 mb-3">
-                        <label for="{{ documento_form.fotocopia_rut.id_for_label }}" class="form-label">
-                            {{ documento_form.fotocopia_rut.label }}
-                        </label>
+                        <label for="{{ documento_form.fotocopia_rut.id_for_label }}" class="form-label">{{ documento_form.fotocopia_rut.label }}</label>
                         {{ documento_form.fotocopia_rut }}
-                        {% if documento_form.fotocopia_rut.errors %}
-                            <div class="text-danger">{{ documento_form.fotocopia_rut.errors }}</div>
-                        {% endif %}
+                        {% if documento_form.fotocopia_rut.errors %}<div class="text-danger">{{ documento_form.fotocopia_rut.errors }}</div>{% endif %}
                     </div>
-
                     <div class="col-md-6 mb-3">
-                        <label for="{{ documento_form.solicitud_vinculacion.id_for_label }}" class="form-label">
-                            {{ documento_form.solicitud_vinculacion.label }}
-                        </label>
+                        <label for="{{ documento_form.solicitud_vinculacion.id_for_label }}" class="form-label">{{ documento_form.solicitud_vinculacion.label }}</label>
                         {{ documento_form.solicitud_vinculacion }}
-                        {% if documento_form.solicitud_vinculacion.errors %}
-                            <div class="text-danger">{{ documento_form.solicitud_vinculacion.errors }}</div>
-                        {% endif %}
+                        {% if documento_form.solicitud_vinculacion.errors %}<div class="text-danger">{{ documento_form.solicitud_vinculacion.errors }}</div>{% endif %}
                     </div>
                 </div>
-
                 <div class="row">
                     <div class="col-md-6 mb-3">
-                        <label for="{{ documento_form.certificado_camara_comercio.id_for_label }}" class="form-label">
-                            {{ documento_form.certificado_camara_comercio.label }}
-                        </label>
+                        <label for="{{ documento_form.certificado_camara_comercio.id_for_label }}" class="form-label">{{ documento_form.certificado_camara_comercio.label }}</label>
                         {{ documento_form.certificado_camara_comercio }}
-                        {% if documento_form.certificado_camara_comercio.errors %}
-                            <div class="text-danger">{{ documento_form.certificado_camara_comercio.errors }}</div>
-                        {% endif %}
+                        {% if documento_form.certificado_camara_comercio.errors %}<div class="text-danger">{{ documento_form.certificado_camara_comercio.errors }}</div>{% endif %}
                     </div>
-
                     <div class="col-md-6 mb-3">
-                        <label for="{{ documento_form.certificacion_bancaria.id_for_label }}" class="form-label">
-                            {{ documento_form.certificacion_bancaria.label }}
-                        </label>
+                        <label for="{{ documento_form.certificacion_bancaria.id_for_label }}" class="form-label">{{ documento_form.certificacion_bancaria.label }}</label>
                         {{ documento_form.certificacion_bancaria }}
-                        {% if documento_form.certificacion_bancaria.errors %}
-                            <div class="text-danger">{{ documento_form.certificacion_bancaria.errors }}</div>
-                        {% endif %}
+                        {% if documento_form.certificacion_bancaria.errors %}<div class="text-danger">{{ documento_form.certificacion_bancaria.errors }}</div>{% endif %}
                     </div>
                 </div>
-
                 <div class="row">
                     <div class="col-md-6 mb-3">
-                        <label for="{{ documento_form.fotocopia_cc_representante.id_for_label }}" class="form-label">
-                            {{ documento_form.fotocopia_cc_representante.label }}
-                        </label>
+                        <label for="{{ documento_form.fotocopia_cc_representante.id_for_label }}" class="form-label">{{ documento_form.fotocopia_cc_representante.label }}</label>
                         {{ documento_form.fotocopia_cc_representante }}
-                        {% if documento_form.fotocopia_cc_representante.errors %}
-                            <div class="text-danger">{{ documento_form.fotocopia_cc_representante.errors }}</div>
-                        {% endif %}
+                        {% if documento_form.fotocopia_cc_representante.errors %}<div class="text-danger">{{ documento_form.fotocopia_cc_representante.errors }}</div>{% endif %}
                     </div>
-
+                <div class="row">
                     <div class="col-md-6 mb-3">
-                        <label for="{{ documento_form.autorizacion_datos.id_for_label }}" class="form-label">
-                            {{ documento_form.autorizacion_datos.label }}
-                        </label>
-                        {{ documento_form.autorizacion_datos }}
-                        {% if documento_form.autorizacion_datos.errors %}
-                            <div class="text-danger">{{ documento_form.autorizacion_datos.errors }}</div>
-                        {% endif %}
+                        <label for="{{ documento_form.autorizacion_datos.id_for_label }}" class="form-label">{{ documento_form.autorizacion_datos.label }}</label>
+                        <div class="signature-wrapper" id="sig-wrapper-auth">
+                            <div class="btn-group w-100 mb-2">
+                                <button type="button" class="btn btn-secondary active sig-toggle-btn" data-target="draw">Dibujar Firma</button>
+                                <button type="button" class="btn btn-secondary sig-toggle-btn" data-target="upload">Subir Archivo</button>
+                            </div>
+                            <div class="sig-draw-section">
+                                <div class="signature-pad-container">
+                                    <canvas id="signature-pad-auth" class="signature-pad-canvas"></canvas>
+                                </div>
+                                <div class="signature-pad-actions">
+                                    <button type="button" class="btn btn-sm btn-outline-danger sig-clear-btn">Limpiar</button>
+                                </div>
+                            </div>
+                            <div class="sig-upload-section" style="display: none;">
+                                {{ documento_form.autorizacion_datos }}
+                            </div>
+                            <input type="hidden" name="autorizacion_datos_base64" id="autorizacion_datos_base64">
+                        </div>
+                        {% if documento_form.autorizacion_datos.errors %}<div class="text-danger">{{ documento_form.autorizacion_datos.errors }}</div>{% endif %}
                     </div>
                 </div>
             </div>
 
             <!-- SECCIÓN 6: FIRMA Y REPRESENTANTE LEGAL -->
             <div class="form-section">
-                <h2 class="section-title">
-                    <i class="fas fa-signature"></i> Representante Legal de Su Empresa
-                </h2>
-                <p class="text-muted mb-4">
-                    <i class="fas fa-user-tie"></i>
-                    Datos de la persona autorizada para representar legalmente a su empresa
-                </p>
-
+                <h2 class="section-title"><i class="fas fa-signature"></i> Representante Legal</h2>
                 <div class="row">
                     <div class="col-md-12 mb-3">
-                        <label for="{{ proveedor_form.datos_representante_legal.id_for_label }}" class="form-label required-field">
-                            {{ proveedor_form.datos_representante_legal.label }}
-                        </label>
+                        <label for="{{ proveedor_form.datos_representante_legal.id_for_label }}" class="form-label required-field">{{ proveedor_form.datos_representante_legal.label }}</label>
                         {{ proveedor_form.datos_representante_legal }}
-                        {% if proveedor_form.datos_representante_legal.errors %}
-                            <div class="text-danger">{{ proveedor_form.datos_representante_legal.errors }}</div>
-                        {% endif %}
+                        {% if proveedor_form.datos_representante_legal.errors %}<div class="text-danger">{{ proveedor_form.datos_representante_legal.errors }}</div>{% endif %}
                     </div>
                 </div>
-
                 <div class="row">
                     <div class="col-md-6 mb-3">
-                        <label for="{{ proveedor_form.firma_representante.id_for_label }}" class="form-label">
-                            {{ proveedor_form.firma_representante.label }}
-                        </label>
-                        {{ proveedor_form.firma_representante }}
-                        <small class="form-text">Formato de imagen (PNG, JPG)</small>
-                        {% if proveedor_form.firma_representante.errors %}
-                            <div class="text-danger">{{ proveedor_form.firma_representante.errors }}</div>
-                        {% endif %}
+                        <label for="{{ proveedor_form.firma_representante.id_for_label }}" class="form-label">{{ proveedor_form.firma_representante.label }}</label>
+                        <div class="signature-wrapper" id="sig-wrapper-rep">
+                            <div class="btn-group w-100 mb-2">
+                                <button type="button" class="btn btn-secondary active sig-toggle-btn" data-target="draw">Dibujar Firma</button>
+                                <button type="button" class="btn btn-secondary sig-toggle-btn" data-target="upload">Subir Archivo</button>
+                            </div>
+                            <div class="sig-draw-section">
+                                <div class="signature-pad-container">
+                                    <canvas id="signature-pad-rep" class="signature-pad-canvas"></canvas>
+                                </div>
+                                <div class="signature-pad-actions">
+                                    <button type="button" class="btn btn-sm btn-outline-danger sig-clear-btn">Limpiar</button>
+                                </div>
+                            </div>
+                            <div class="sig-upload-section" style="display: none;">
+                                {{ proveedor_form.firma_representante }}
+                            </div>
+                            <input type="hidden" name="firma_representante_base64" id="firma_representante_base64">
+                        </div>
+                        <small class="form-text">Puede dibujar su firma o subir una imagen.</small>
+                        {% if proveedor_form.firma_representante.errors %}<div class="text-danger">{{ proveedor_form.firma_representante.errors }}</div>{% endif %}
                     </div>
-
                     <div class="col-md-6 mb-3">
-                        <label for="{{ proveedor_form.sello.id_for_label }}" class="form-label">
-                            {{ proveedor_form.sello.label }}
-                        </label>
+                        <label for="{{ proveedor_form.sello.id_for_label }}" class="form-label">{{ proveedor_form.sello.label }}</label>
                         {{ proveedor_form.sello }}
                         <small class="form-text">Formato de imagen (PNG, JPG)</small>
-                        {% if proveedor_form.sello.errors %}
-                            <div class="text-danger">{{ proveedor_form.sello.errors }}</div>
-                        {% endif %}
+                        {% if proveedor_form.sello.errors %}<div class="text-danger">{{ proveedor_form.sello.errors }}</div>{% endif %}
                     </div>
                 </div>
             </div>
 
             <!-- BOTONES DE ACCIÓN -->
             <div class="text-center mt-5">
-                <div class="alert alert-success mb-4">
-                    <i class="fas fa-check-circle"></i>
-                    <strong>
-                        {% if is_update %}
-                            Al hacer clic en "Actualizar Mis Datos", su información será actualizada en nuestro sistema.
-                        {% else %}
-                            Al hacer clic en "Completar Registro", su información será guardada y recibirá una confirmación.
-                        {% endif %}
-                    </strong>
-                </div>
-
-                <button type="submit" class="btn btn-primary btn-lg px-5">
-                    <i class="fas fa-check-circle"></i>
-                    {% if is_update %}
-                        Actualizar Mis Datos
-                    {% else %}
-                        Completar Registro
-                    {% endif %}
-                </button>
-                <button type="reset" class="btn btn-secondary btn-lg ms-3 px-5">
-                    <i class="fas fa-undo"></i> Limpiar Formulario
-                </button>
-            </div>
-
-            <div class="text-center mt-4">
-                <p class="text-muted">
-                    <i class="fas fa-lock"></i> Sus datos están protegidos y serán utilizados únicamente para procesos comerciales.
-                </p>
+                <button type="submit" class="btn btn-primary btn-lg px-5" id="submit-btn">Completar Registro</button>
+                <button type="reset" class="btn btn-secondary btn-lg ms-3 px-5">Limpiar Formulario</button>
             </div>
         </form>
     </div>
@@ -565,53 +554,100 @@
 
 {% block extra_js %}
 {{ block.super }}
+<script src="{% static 'js/signature_pad.min.js' %}"></script>
 <script>
-    // Script para manejar los formsets dinámicos
-    $(document).ready(function() {
-        // Manejar eliminación de contactos
-        $('.remove-contact').on('click', function() {
-            var contactGroup = $(this).closest('.contact-group');
-            var deleteCheckbox = contactGroup.find('input[name$="-DELETE"]');
-            if (deleteCheckbox.length) {
-                deleteCheckbox.prop('checked', true);
-                contactGroup.hide();
+$(document).ready(function() {
+    // ==================================================
+    // --- INICIALIZACIÓN DE PANELES DE FIRMA ---
+    // ==================================================
+    function initializeSignaturePad(wrapperId, canvasId, hiddenInputId) {
+        const wrapper = $(`#${wrapperId}`);
+        const canvas = document.getElementById(canvasId);
+        if (!canvas) return;
+        const signaturePad = new SignaturePad(canvas, { backgroundColor: 'rgb(248, 249, 250)' });
+        const hiddenInput = $(`#${hiddenInputId}`);
+
+        function resizeCanvas() {
+            const ratio = Math.max(window.devicePixelRatio || 1, 1);
+            canvas.width = canvas.offsetWidth * ratio;
+            canvas.height = canvas.offsetHeight * ratio;
+            canvas.getContext("2d").scale(ratio, ratio);
+            signaturePad.clear();
+        }
+        window.addEventListener("resize", resizeCanvas);
+        resizeCanvas();
+
+        wrapper.find('.sig-clear-btn').on('click', function() {
+            signaturePad.clear();
+            hiddenInput.val('');
+        });
+
+        signaturePad.addEventListener("endStroke", () => {
+            if (!signaturePad.isEmpty()) {
+                const dataURL = signaturePad.toDataURL('image/png');
+                hiddenInput.val(dataURL);
+            }
+        });
+
+        wrapper.find('.sig-toggle-btn').on('click', function() {
+            const target = $(this).data('target');
+            wrapper.find('.sig-toggle-btn').removeClass('active');
+            $(this).addClass('active');
+            if (target === 'draw') {
+                wrapper.find('.sig-draw-section').show();
+                wrapper.find('.sig-upload-section').hide();
+                resizeCanvas();
             } else {
-                contactGroup.remove();
+                wrapper.find('.sig-draw-section').hide();
+                wrapper.find('.sig-upload-section').show();
+                signaturePad.clear();
+                hiddenInput.val('');
             }
         });
+    }
 
-        // Validar formulario antes de enviar
-        $('#proveedorForm').on('submit', function(e) {
-            var requiredFields = $(this).find('input[required], select[required]');
-            var valid = true;
+    initializeSignaturePad('sig-wrapper-rep', 'signature-pad-rep', 'firma_representante_base64');
+    initializeSignaturePad('sig-wrapper-auth', 'signature-pad-auth', 'autorizacion_datos_base64');
 
-            requiredFields.each(function() {
-                if (!$(this).val()) {
-                    valid = false;
-                    $(this).addClass('is-invalid');
-                } else {
-                    $(this).removeClass('is-invalid');
-                }
-            });
+    // ==================================================
+    // --- MANEJO DE IMPUESTOS CONDICIONALES ---
+    // ==================================================
+    function toggleConditionalFields(checkbox, conditionalBlock) {
+        if (checkbox.is(':checked')) {
+            conditionalBlock.slideDown();
+        } else {
+            conditionalBlock.slideUp();
+        }
+    }
 
-            if (!valid) {
-                e.preventDefault();
-                alert('Por favor complete todos los campos requeridos');
-                return false;
-            }
-        });
+    const icaCheckbox = $('#id_aplica_ICA');
+    const otroCheckbox = $('#id_aplica_OTRO');
+    const icaBlock = $('#conditional-ICA');
+    const otroBlock = $('#conditional-OTRO');
 
-        // Mostrar/ocultar campo de "Otra condición de pago"
-        $('#id_condicion_pago').on('change', function() {
-            if ($(this).val() === 'OTRO') {
-                $('#id_condicion_pago_otro').closest('.col-md-6').show();
-            } else {
-                $('#id_condicion_pago_otro').closest('.col-md-6').hide();
-            }
-        });
+    // Estado inicial al cargar la página
+    toggleConditionalFields(icaCheckbox, icaBlock);
+    toggleConditionalFields(otroCheckbox, otroBlock);
 
-        // Trigger inicial para "Otra condición de pago"
-        $('#id_condicion_pago').trigger('change');
+    // Listeners para cambios
+    icaCheckbox.on('change', function() { toggleConditionalFields($(this), icaBlock); });
+    otroCheckbox.on('change', function() { toggleConditionalFields($(this), otroBlock); });
+
+    // ==================================================
+    // --- CÓDIGO ANTERIOR DEL FORMULARIO ---
+    // ==================================================
+    $('#id_condicion_pago').on('change', function() {
+        if ($(this).val() === 'OTRO') {
+            $('#id_condicion_pago_otro').closest('.col-md-6').show();
+        } else {
+            $('#id_condicion_pago_otro').closest('.col-md-6').hide();
+        }
+    }).trigger('change');
+
+    // Botón de submit para guardar firmas antes de enviar
+    $('#proveedorForm').on('submit', function() {
+        // Esto ya se maneja con el evento endStroke, no se necesita acción extra aquí
     });
+});
 </script>
 {% endblock %}

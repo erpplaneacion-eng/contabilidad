@@ -183,77 +183,6 @@ class ContactoForm(forms.ModelForm):
         }
 
 
-class ImpuestoForm(forms.ModelForm):
-    """Formulario para el modelo Impuesto"""
-
-    class Meta:
-        model = Impuesto
-        fields = [
-            'tipo_impuesto',
-            'aplica',
-            'porcentaje',
-            'codigo_actividad_economica',
-            'tarifa',
-            'municipio',
-            'resolucion_exento',
-            'otro_concepto',
-        ]
-        widgets = {
-            'tipo_impuesto': forms.Select(
-                attrs={
-                    'class': 'form-select'
-                }
-            ),
-            'aplica': forms.CheckboxInput(
-                attrs={
-                    'class': 'form-check-input'
-                }
-            ),
-            'porcentaje': forms.NumberInput(
-                attrs={
-                    'class': 'form-control',
-                    'placeholder': '0.00',
-                    'step': '0.01',
-                    'min': '0',
-                    'max': '100'
-                }
-            ),
-            'codigo_actividad_economica': forms.TextInput(
-                attrs={
-                    'class': 'form-control',
-                    'placeholder': 'Código CIIU'
-                }
-            ),
-            'tarifa': forms.NumberInput(
-                attrs={
-                    'class': 'form-control',
-                    'placeholder': '0.00',
-                    'step': '0.01',
-                    'min': '0',
-                    'max': '100'
-                }
-            ),
-            'municipio': forms.TextInput(
-                attrs={
-                    'class': 'form-control',
-                    'placeholder': 'Municipio'
-                }
-            ),
-            'resolucion_exento': forms.TextInput(
-                attrs={
-                    'class': 'form-control',
-                    'placeholder': 'Número y fecha de resolución (si aplica)'
-                }
-            ),
-            'otro_concepto': forms.TextInput(
-                attrs={
-                    'class': 'form-control',
-                    'placeholder': 'Especificar otro concepto (si aplica)'
-                }
-            ),
-        }
-
-
 class DocumentoRequeridoForm(forms.ModelForm):
     """Formulario para el modelo DocumentoRequerido"""
 
@@ -307,7 +236,7 @@ class DocumentoRequeridoForm(forms.ModelForm):
         }
 
 
-# Formsets para contactos e impuestos
+# Formsets para contactos
 ContactoFormSet = inlineformset_factory(
     Proveedor,
     Contacto,
@@ -317,11 +246,90 @@ ContactoFormSet = inlineformset_factory(
     max_num=5,  # Máximo de contactos permitidos
 )
 
-ImpuestoFormSet = inlineformset_factory(
-    Proveedor,
-    Impuesto,
-    form=ImpuestoForm,
-    extra=4,  # Uno para cada tipo de impuesto
-    can_delete=True,
-    max_num=10,
-)
+
+class ImpuestosProveedorForm(forms.Form):
+    """Formulario para la nueva tabla de impuestos del proveedor."""
+
+    # Campos para la resolución de exento
+    resolucion_exento_numero = forms.CharField(label="Número de Resolución", required=False)
+    resolucion_exento_fecha = forms.DateField(label="Fecha de Resolución", required=False, widget=forms.DateInput(attrs={'type': 'date'}))
+
+    def __init__(self, *args, **kwargs):
+        proveedor = kwargs.pop('proveedor', None)
+        super().__init__(*args, **kwargs)
+
+        # Crear campos dinámicamente para cada tipo de impuesto
+        for key, label in Impuesto.TIPO_IMPUESTO_CHOICES:
+            self.fields[f'aplica_{key}'] = forms.BooleanField(required=False, label=label)
+
+            if key == 'ICA':
+                self.fields[f'codigo_ciiu_{key}'] = forms.CharField(required=False, label="Código CIIU")
+                self.fields[f'tarifa_{key}'] = forms.DecimalField(required=False, label="Tarifa (por mil)")
+                self.fields[f'municipio_{key}'] = forms.CharField(required=False, label="Municipio")
+            elif key == 'OTRO':
+                self.fields[f'porcentaje_{key}'] = forms.DecimalField(required=False, label="Porcentaje")
+                self.fields[f'otro_concepto_{key}'] = forms.CharField(required=False, label="¿Cuál?")
+            else:
+                self.fields[f'porcentaje_{key}'] = forms.DecimalField(required=False, label="Porcentaje")
+
+        # Si es una actualización, poblar el formulario con datos existentes
+        if proveedor:
+            impuestos_existentes = {imp.tipo_impuesto: imp for imp in proveedor.impuestos.all()}
+            for key, label in Impuesto.TIPO_IMPUESTO_CHOICES:
+                if key in impuestos_existentes:
+                    impuesto = impuestos_existentes[key]
+                    self.initial[f'aplica_{key}'] = impuesto.aplica
+                    if key == 'ICA':
+                        self.initial[f'codigo_ciiu_{key}'] = impuesto.codigo_actividad_economica
+                        self.initial[f'tarifa_{key}'] = impuesto.tarifa
+                        self.initial[f'municipio_{key}'] = impuesto.municipio
+                    elif key == 'OTRO':
+                        self.initial[f'porcentaje_{key}'] = impuesto.porcentaje
+                        self.initial[f'otro_concepto_{key}'] = impuesto.otro_concepto
+                    else:
+                        self.initial[f'porcentaje_{key}'] = impuesto.porcentaje
+
+                    # Poblar datos de resolución (asumiendo que puede estar en cualquiera)
+                    if impuesto.resolucion_exento:
+                        try:
+                            numero, fecha = impuesto.resolucion_exento.split(' del ')
+                            self.initial['resolucion_exento_numero'] = numero
+                            self.initial['resolucion_exento_fecha'] = fecha
+                        except (ValueError, IndexError):
+                            self.initial['resolucion_exento_numero'] = impuesto.resolucion_exento
+
+    def save(self, proveedor):
+        """Guarda los datos de impuestos para un proveedor."""
+        resolucion_str = ""
+        if self.cleaned_data.get('resolucion_exento_numero') and self.cleaned_data.get('resolucion_exento_fecha'):
+            numero = self.cleaned_data['resolucion_exento_numero']
+            fecha = self.cleaned_data['resolucion_exento_fecha'].strftime('%Y-%m-%d')
+            resolucion_str = f"{numero} del {fecha}"
+
+        for key, label in Impuesto.TIPO_IMPUESTO_CHOICES:
+            aplica = self.cleaned_data.get(f'aplica_{key}')
+
+            if aplica:
+                defaults = {
+                    'aplica': True,
+                    'resolucion_exento': resolucion_str
+                }
+                if key == 'ICA':
+                    defaults['codigo_actividad_economica'] = self.cleaned_data.get(f'codigo_ciiu_{key}')
+                    defaults['tarifa'] = self.cleaned_data.get(f'tarifa_{key}')
+                    defaults['municipio'] = self.cleaned_data.get(f'municipio_{key}')
+                    defaults['porcentaje'] = None # ICA no usa porcentaje
+                elif key == 'OTRO':
+                    defaults['porcentaje'] = self.cleaned_data.get(f'porcentaje_{key}')
+                    defaults['otro_concepto'] = self.cleaned_data.get(f'otro_concepto_{key}')
+                else:
+                    defaults['porcentaje'] = self.cleaned_data.get(f'porcentaje_{key}')
+
+                Impuesto.objects.update_or_create(
+                    proveedor=proveedor,
+                    tipo_impuesto=key,
+                    defaults=defaults
+                )
+            else:
+                # Si no aplica, borrar el registro existente
+                Impuesto.objects.filter(proveedor=proveedor, tipo_impuesto=key).delete()
