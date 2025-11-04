@@ -76,10 +76,13 @@
 
         <!-- Cerrar Sesión -->
         <div class="sidebar-footer mt-4 pt-3 border-top border-secondary">
-            <a href="{% url 'logout' %}" class="sidebar-item d-block text-danger text-decoration-none p-2 rounded" title="Cerrar Sesión">
-                <i class="fas fa-sign-out-alt me-2"></i>
-                <span class="sidebar-text">Cerrar Sesión</span>
-            </a>
+            <form method="post" action="{% url 'logout' %}" id="logout-form">
+                {% csrf_token %}
+                <button type="submit" class="sidebar-item d-block text-danger text-decoration-none p-2 rounded w-100 border-0 text-start" title="Cerrar Sesión" style="background: rgba(220, 53, 69, 0.1); cursor: pointer;">
+                    <i class="fas fa-sign-out-alt me-2"></i>
+                    <span class="sidebar-text">Cerrar Sesión</span>
+                </button>
+            </form>
         </div>
     </div>
 </nav>
@@ -131,12 +134,14 @@
     }
 
     /* Botón de cerrar sesión */
-    .sidebar-footer a {
+    .sidebar-footer button {
         background: rgba(220, 53, 69, 0.1);
+        transition: all 0.3s ease;
     }
 
-    .sidebar-footer a:hover {
+    .sidebar-footer button:hover {
         background: rgba(220, 53, 69, 0.2) !important;
+        transform: translateX(5px);
     }
 
     /* Scrollbar personalizada para el sidebar */

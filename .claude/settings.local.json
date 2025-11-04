@@ -17,7 +17,8 @@
       "Bash(done)",
       "Bash(git add:*)",
       "Bash(git commit:*)",
-      "Bash(git config:*)"
+      "Bash(git config:*)",
+      "Bash(python manage.py shell:*)"
     ],
     "deny": [],
     "ask": []
