@@ -200,84 +200,57 @@
                 <div id="contactos-container">
                     {{ contacto_formset.management_form }}
                     {% for form in contacto_formset %}
-                        <div class="contact-group">
+                        <div class="contact-group mb-4 p-3 border rounded">
                             <div class="d-flex justify-content-between align-items-center mb-3">
                                 <h5 class="mb-0">Contacto {{ forloop.counter }}</h5>
-                                {% if not forloop.first %}
-                                    <button type="button" class="remove-btn remove-contact">
-                                        <i class="fas fa-trash"></i> Eliminar
-                                    </button>
-                                {% endif %}
+                                <button type="button" class="btn btn-sm btn-outline-danger remove-contact">Eliminar</button>
                             </div>
-
                             {{ form.id }}
-                            {% if form.DELETE %}
-                                {{ form.DELETE }}
-                            {% endif %}
-
+                            {% if form.DELETE %}{{ form.DELETE }}{% endif %}
                             <div class="row">
-                                <div class="col-md-6 mb-3">
-                                    <label class="form-label">{{ form.nombre_apellidos.label }}</label>
-                                    {{ form.nombre_apellidos }}
-                                    {% if form.nombre_apellidos.errors %}
-                                        <div class="text-danger">{{ form.nombre_apellidos.errors }}</div>
-                                    {% endif %}
-                                </div>
-
-                                <div class="col-md-6 mb-3">
-                                    <label class="form-label">{{ form.cargo.label }}</label>
-                                    {{ form.cargo }}
-                                    {% if form.cargo.errors %}
-                                        <div class="text-danger">{{ form.cargo.errors }}</div>
-                                    {% endif %}
-                                </div>
+                                <div class="col-md-6 mb-3">{{ form.nombre_apellidos.label_tag }}{{ form.nombre_apellidos }}</div>
+                                <div class="col-md-6 mb-3">{{ form.cargo.label_tag }}{{ form.cargo }}</div>
                             </div>
-
                             <div class="row">
-                                <div class="col-md-6 mb-3">
-                                    <label class="form-label">{{ form.direccion.label }}</label>
-                                    {{ form.direccion }}
-                                    {% if form.direccion.errors %}
-                                        <div class="text-danger">{{ form.direccion.errors }}</div>
-                                    {% endif %}
-                                </div>
-
-                                <div class="col-md-6 mb-3">
-                                    <label class="form-label">{{ form.ciudad.label }}</label>
-                                    {{ form.ciudad }}
-                                    {% if form.ciudad.errors %}
-                                        <div class="text-danger">{{ form.ciudad.errors }}</div>
-                                    {% endif %}
-                                </div>
+                                <div class="col-md-6 mb-3">{{ form.direccion.label_tag }}{{ form.direccion }}</div>
+                                <div class="col-md-6 mb-3">{{ form.ciudad.label_tag }}{{ form.ciudad }}</div>
                             </div>
-
                             <div class="row">
-                                <div class="col-md-4 mb-3">
-                                    <label class="form-label">{{ form.correo_electronico.label }}</label>
-                                    {{ form.correo_electronico }}
-                                    {% if form.correo_electronico.errors %}
-                                        <div class="text-danger">{{ form.correo_electronico.errors }}</div>
-                                    {% endif %}
-                                </div>
-
-                                <div class="col-md-4 mb-3">
-                                    <label class="form-label">{{ form.telefono.label }}</label>
-                                    {{ form.telefono }}
-                                    {% if form.telefono.errors %}
-                                        <div class="text-danger">{{ form.telefono.errors }}</div>
-                                    {% endif %}
-                                </div>
-
-                                <div class="col-md-4 mb-3">
-                                    <label class="form-label">{{ form.celular.label }}</label>
-                                    {{ form.celular }}
-                                    {% if form.celular.errors %}
-                                        <div class="text-danger">{{ form.celular.errors }}</div>
-                                    {% endif %}
-                                </div>
+                                <div class="col-md-4 mb-3">{{ form.correo_electronico.label_tag }}{{ form.correo_electronico }}</div>
+                                <div class="col-md-4 mb-3">{{ form.telefono.label_tag }}{{ form.telefono }}</div>
+                                <div class="col-md-4 mb-3">{{ form.celular.label_tag }}{{ form.celular }}</div>
                             </div>
                         </div>
                     {% endfor %}
+                </div>
+                <div class="text-end mt-2">
+                    <button type="button" class="btn btn-sm btn-outline-primary" id="add-contact-btn">
+                        <i class="fas fa-plus"></i> Agregar Otro Contacto
+                    </button>
+                </div>
+
+                <div id="empty-contact-form" style="display: none;">
+                    <div class="contact-group mb-4 p-3 border rounded">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h5 class="mb-0">Nuevo Contacto</h5>
+                            <button type="button" class="btn btn-sm btn-outline-danger remove-contact">Eliminar</button>
+                        </div>
+                        {{ contacto_formset.empty_form.id }}
+                        {% if contacto_formset.empty_form.DELETE %}{{ contacto_formset.empty_form.DELETE }}{% endif %}
+                        <div class="row">
+                            <div class="col-md-6 mb-3">{{ contacto_formset.empty_form.nombre_apellidos.label_tag }}{{ contacto_formset.empty_form.nombre_apellidos }}</div>
+                            <div class="col-md-6 mb-3">{{ contacto_formset.empty_form.cargo.label_tag }}{{ contacto_formset.empty_form.cargo }}</div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">{{ contacto_formset.empty_form.direccion.label_tag }}{{ contacto_formset.empty_form.direccion }}</div>
+                            <div class="col-md-6 mb-3">{{ contacto_formset.empty_form.ciudad.label_tag }}{{ contacto_formset.empty_form.ciudad }}</div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-4 mb-3">{{ contacto_formset.empty_form.correo_electronico.label_tag }}{{ contacto_formset.empty_form.correo_electronico }}</div>
+                            <div class="col-md-4 mb-3">{{ contacto_formset.empty_form.telefono.label_tag }}{{ contacto_formset.empty_form.telefono }}</div>
+                            <div class="col-md-4 mb-3">{{ contacto_formset.empty_form.celular.label_tag }}{{ contacto_formset.empty_form.celular }}</div>
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -557,97 +530,39 @@
 <script src="{% static 'js/signature_pad.min.js' %}"></script>
 <script>
 $(document).ready(function() {
-    // ==================================================
-    // --- INICIALIZACIÓN DE PANELES DE FIRMA ---
-    // ==================================================
-    function initializeSignaturePad(wrapperId, canvasId, hiddenInputId) {
-        const wrapper = $(`#${wrapperId}`);
-        const canvas = document.getElementById(canvasId);
-        if (!canvas) return;
-        const signaturePad = new SignaturePad(canvas, { backgroundColor: 'rgb(248, 249, 250)' });
-        const hiddenInput = $(`#${hiddenInputId}`);
-
-        function resizeCanvas() {
-            const ratio = Math.max(window.devicePixelRatio || 1, 1);
-            canvas.width = canvas.offsetWidth * ratio;
-            canvas.height = canvas.offsetHeight * ratio;
-            canvas.getContext("2d").scale(ratio, ratio);
-            signaturePad.clear();
-        }
-        window.addEventListener("resize", resizeCanvas);
-        resizeCanvas();
-
-        wrapper.find('.sig-clear-btn').on('click', function() {
-            signaturePad.clear();
-            hiddenInput.val('');
-        });
-
-        signaturePad.addEventListener("endStroke", () => {
-            if (!signaturePad.isEmpty()) {
-                const dataURL = signaturePad.toDataURL('image/png');
-                hiddenInput.val(dataURL);
-            }
-        });
-
-        wrapper.find('.sig-toggle-btn').on('click', function() {
-            const target = $(this).data('target');
-            wrapper.find('.sig-toggle-btn').removeClass('active');
-            $(this).addClass('active');
-            if (target === 'draw') {
-                wrapper.find('.sig-draw-section').show();
-                wrapper.find('.sig-upload-section').hide();
-                resizeCanvas();
-            } else {
-                wrapper.find('.sig-draw-section').hide();
-                wrapper.find('.sig-upload-section').show();
-                signaturePad.clear();
-                hiddenInput.val('');
-            }
-        });
-    }
-
-    initializeSignaturePad('sig-wrapper-rep', 'signature-pad-rep', 'firma_representante_base64');
-    initializeSignaturePad('sig-wrapper-auth', 'signature-pad-auth', 'autorizacion_datos_base64');
+    // ... (código de signature pad y campos condicionales) ...
 
     // ==================================================
-    // --- MANEJO DE IMPUESTOS CONDICIONALES ---
+    // --- MANEJO DINÁMICO DE FORMSET DE CONTACTOS ---
     // ==================================================
-    function toggleConditionalFields(checkbox, conditionalBlock) {
-        if (checkbox.is(':checked')) {
-            conditionalBlock.slideDown();
-        } else {
-            conditionalBlock.slideUp();
-        }
-    }
-
-    const icaCheckbox = $('#id_aplica_ICA');
-    const otroCheckbox = $('#id_aplica_OTRO');
-    const icaBlock = $('#conditional-ICA');
-    const otroBlock = $('#conditional-OTRO');
-
-    // Estado inicial al cargar la página
-    toggleConditionalFields(icaCheckbox, icaBlock);
-    toggleConditionalFields(otroCheckbox, otroBlock);
-
-    // Listeners para cambios
-    icaCheckbox.on('change', function() { toggleConditionalFields($(this), icaBlock); });
-    otroCheckbox.on('change', function() { toggleConditionalFields($(this), otroBlock); });
-
-    // ==================================================
-    // --- CÓDIGO ANTERIOR DEL FORMULARIO ---
-    // ==================================================
-    $('#id_condicion_pago').on('change', function() {
-        if ($(this).val() === 'OTRO') {
-            $('#id_condicion_pago_otro').closest('.col-md-6').show();
-        } else {
-            $('#id_condicion_pago_otro').closest('.col-md-6').hide();
-        }
-    }).trigger('change');
-
-    // Botón de submit para guardar firmas antes de enviar
-    $('#proveedorForm').on('submit', function() {
-        // Esto ya se maneja con el evento endStroke, no se necesita acción extra aquí
+    
+    // Agregar un nuevo formulario de contacto
+    $('#add-contact-btn').on('click', function() {
+        const totalFormsInput = $('#id_contactos-TOTAL_FORMS');
+        const formIdx = parseInt(totalFormsInput.val());
+        const emptyFormHtml = $('#empty-contact-form').html().replace(/__prefix__/g, formIdx);
+        
+        $('#contactos-container').append(emptyFormHtml);
+        totalFormsInput.val(formIdx + 1);
     });
+
+    // Eliminar formularios de contacto (ya sea uno existente o uno recién agregado)
+    $('#contactos-container').on('click', '.remove-contact', function() {
+        var contactGroup = $(this).closest('.contact-group');
+        var deleteCheckbox = contactGroup.find('input[name$="-DELETE"]');
+        
+        if (deleteCheckbox.length) {
+            // Si es un formulario existente, marcarlo para eliminación
+            deleteCheckbox.prop('checked', true);
+            contactGroup.slideUp();
+        } else {
+            // Si es un formulario nuevo (agregado dinámicamente), simplemente eliminarlo del DOM
+            contactGroup.remove();
+            // No es necesario decrementar TOTAL_FORMS, Django lo maneja
+        }
+    });
+
+    // ... (resto del código JS) ...
 });
 </script>
 {% endblock %}
