@@ -116,3 +116,38 @@ def guardar_perfil_usuario(sender, instance, **kwargs):
     """
     if hasattr(instance, 'profile'):
         instance.profile.save()
+
+
+class Departamento(models.Model):
+    """Modelo para los departamentos de un país."""
+    codigo_departamento = models.CharField(max_length=10, primary_key=True, verbose_name='Código del Departamento')
+    nombre_departamento = models.CharField(max_length=100, verbose_name='Nombre del Departamento')
+
+    class Meta:
+        verbose_name = 'Departamento'
+        verbose_name_plural = 'Departamentos'
+        ordering = ['nombre_departamento']
+
+    def __str__(self):
+        return self.nombre_departamento
+
+
+class Municipio(models.Model):
+    """Modelo para los municipios de un departamento."""
+    codigo_municipio = models.CharField(max_length=10, unique=True, verbose_name='Código del Municipio')
+    nombre_municipio = models.CharField(max_length=100, verbose_name='Nombre del Municipio')
+    departamento = models.ForeignKey(
+        Departamento, 
+        on_delete=models.CASCADE, 
+        related_name='municipios',
+        verbose_name='Departamento'
+    )
+
+    class Meta:
+        verbose_name = 'Municipio'
+        verbose_name_plural = 'Municipios'
+        ordering = ['departamento', 'nombre_municipio']
+
+    def __str__(self):
+        return f"{self.nombre_municipio} ({self.departamento.nombre_departamento})"
+

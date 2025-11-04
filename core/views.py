@@ -107,3 +107,13 @@ def dashboard_principal(request):
         context['error_separador'] = f"Error al cargar datos de recibos: {str(e)}"
 
     return render(request, 'dashboard/main.html', context)
+
+from django.http import JsonResponse
+from .models import Municipio
+
+def get_municipios(request, departamento_id):
+    """Devuelve una lista de municipios para un departamento dado en formato JSON."""
+    municipios = Municipio.objects.filter(departamento_id=departamento_id).order_by('nombre_municipio')
+    data = list(municipios.values('id', 'nombre_municipio'))
+    return JsonResponse(data, safe=False)
+

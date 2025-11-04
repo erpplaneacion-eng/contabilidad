@@ -7,5 +7,6 @@ from . import views
 app_name = 'core'
 
 urlpatterns = [
-    path('', views.dashboard_principal, name='dashboard'),
+    path('dashboard/', views.dashboard_principal, name='dashboard'),
+    path('api/municipios/<str:departamento_id>/', views.get_municipios, name='get_municipios'),
 ]

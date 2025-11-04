@@ -446,7 +446,6 @@
                         {{ documento_form.fotocopia_cc_representante }}
                         {% if documento_form.fotocopia_cc_representante.errors %}<div class="text-danger">{{ documento_form.fotocopia_cc_representante.errors }}</div>{% endif %}
                     </div>
-                <div class="row">
                     <div class="col-md-6 mb-3">
                         <label for="{{ documento_form.autorizacion_datos.id_for_label }}" class="form-label">{{ documento_form.autorizacion_datos.label }}</label>
                         <div class="signature-wrapper" id="sig-wrapper-auth">
@@ -530,18 +529,183 @@
 <script src="{% static 'js/signature_pad.min.js' %}"></script>
 <script>
 $(document).ready(function() {
-    // ... (código de signature pad y campos condicionales) ...
+    // ==================================================
+    // --- DESPLEGABLES DEPENDIENTES DE DEPARTAMENTO Y MUNICIPIO ---
+    // ==================================================
+    const departamentoSelect = $('#id_departamento');
+    const ciudadSelect = $('#id_ciudad');
+    const initialCiudadId = '{{ proveedor_form.ciudad.value|default_if_none:"" }}';
+
+    function updateCiudades(departamentoId, selectedCiudadId = null) {
+        ciudadSelect.empty();
+        ciudadSelect.append($('<option></option>').val('').text('---------'));
+        ciudadSelect.prop('disabled', true);
+
+        if (departamentoId) {
+            fetch(`/core/api/municipios/${departamentoId}/`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.length > 0) {
+                        data.forEach(function(municipio) {
+                            const option = $('<option></option>').val(municipio.id).text(municipio.nombre_municipio);
+                            if (selectedCiudadId && municipio.id == selectedCiudadId) {
+                                option.attr('selected', 'selected');
+                            }
+                            ciudadSelect.append(option);
+                        });
+                        ciudadSelect.prop('disabled', false);
+                    } else {
+                       ciudadSelect.append($('<option></option>').val('').text('No hay municipios'));
+                    }
+                })
+                .catch(error => {
+                    console.error('Error fetching municipios:', error);
+                    ciudadSelect.append($('<option></option>').val('').text('Error al cargar'));
+                });
+        }
+    }
+
+    departamentoSelect.on('change', function() {
+        const selectedDepartamentoId = $(this).val();
+        updateCiudades(selectedDepartamentoId);
+    });
+
+    const initialDepartamentoId = departamentoSelect.val();
+    if (initialDepartamentoId) {
+        updateCiudades(initialDepartamentoId, initialCiudadId);
+    } else {
+        ciudadSelect.prop('disabled', true);
+        ciudadSelect.append($('<option></option>').val('').text('Seleccione un departamento primero'));
+    }
+
+    // ==================================================
+    // --- SIGNATURE PAD - FIRMA DIGITAL ---
+    // ==================================================
+
+    // Inicializar signature pads
+    const canvasRep = document.getElementById('signature-pad-rep');
+    const canvasAuth = document.getElementById('signature-pad-auth');
+
+    let signaturePadRep = null;
+    let signaturePadAuth = null;
+
+    if (canvasRep) {
+        signaturePadRep = new SignaturePad(canvasRep, {
+            backgroundColor: 'rgb(248, 249, 250)',
+            penColor: 'rgb(0, 0, 0)'
+        });
+        resizeCanvas(canvasRep);
+    }
+
+    if (canvasAuth) {
+        signaturePadAuth = new SignaturePad(canvasAuth, {
+            backgroundColor: 'rgb(248, 249, 250)',
+            penColor: 'rgb(0, 0, 0)'
+        });
+        resizeCanvas(canvasAuth);
+    }
+
+    // Función para redimensionar canvas
+    function resizeCanvas(canvas) {
+        const ratio = Math.max(window.devicePixelRatio || 1, 1);
+        canvas.width = canvas.offsetWidth * ratio;
+        canvas.height = canvas.offsetHeight * ratio;
+        canvas.getContext("2d").scale(ratio, ratio);
+    }
+
+    // Toggle entre Dibujar Firma y Subir Archivo
+    $('.sig-toggle-btn').on('click', function() {
+        const wrapper = $(this).closest('.signature-wrapper');
+        const target = $(this).data('target');
+
+        // Actualizar botones activos
+        wrapper.find('.sig-toggle-btn').removeClass('active');
+        $(this).addClass('active');
+
+        // Mostrar/ocultar secciones
+        if (target === 'draw') {
+            wrapper.find('.sig-draw-section').show();
+            wrapper.find('.sig-upload-section').hide();
+            wrapper.find('input[type="file"]').val(''); // Limpiar archivo
+        } else {
+            wrapper.find('.sig-draw-section').hide();
+            wrapper.find('.sig-upload-section').show();
+            // Limpiar canvas
+            const canvasId = wrapper.find('canvas').attr('id');
+            if (canvasId === 'signature-pad-rep' && signaturePadRep) {
+                signaturePadRep.clear();
+            } else if (canvasId === 'signature-pad-auth' && signaturePadAuth) {
+                signaturePadAuth.clear();
+            }
+        }
+    });
+
+    // Botones para limpiar firma
+    $('.sig-clear-btn').on('click', function() {
+        const wrapper = $(this).closest('.signature-wrapper');
+        const canvasId = wrapper.find('canvas').attr('id');
+
+        if (canvasId === 'signature-pad-rep' && signaturePadRep) {
+            signaturePadRep.clear();
+        } else if (canvasId === 'signature-pad-auth' && signaturePadAuth) {
+            signaturePadAuth.clear();
+        }
+    });
+
+    // Al enviar el formulario, guardar firmas en base64
+    $('#proveedorForm').on('submit', function(e) {
+        // Firma del representante
+        if (signaturePadRep && !signaturePadRep.isEmpty()) {
+            const dataURL = signaturePadRep.toDataURL('image/png');
+            $('#firma_representante_base64').val(dataURL);
+        }
+
+        // Autorización de datos
+        if (signaturePadAuth && !signaturePadAuth.isEmpty()) {
+            const dataURL = signaturePadAuth.toDataURL('image/png');
+            $('#autorizacion_datos_base64').val(dataURL);
+        }
+    });
+
+    // ==================================================
+    // --- CAMPOS CONDICIONALES DE IMPUESTOS ---
+    // ==================================================
+
+    // Mostrar/ocultar campos condicionales según checkboxes
+    function toggleConditionalFields() {
+        // Campo ICA
+        if ($('#id_aplica_ICA').is(':checked')) {
+            $('#conditional-ICA').slideDown();
+        } else {
+            $('#conditional-ICA').slideUp();
+        }
+
+        // Campo OTRO
+        if ($('#id_aplica_OTRO').is(':checked')) {
+            $('#conditional-OTRO').slideDown();
+        } else {
+            $('#conditional-OTRO').slideUp();
+        }
+    }
+
+    // Ejecutar al cargar la página
+    toggleConditionalFields();
+
+    // Ejecutar cuando cambian los checkboxes
+    $('#id_aplica_ICA, #id_aplica_OTRO').on('change', function() {
+        toggleConditionalFields();
+    });
 
     // ==================================================
     // --- MANEJO DINÁMICO DE FORMSET DE CONTACTOS ---
     // ==================================================
-    
+
     // Agregar un nuevo formulario de contacto
     $('#add-contact-btn').on('click', function() {
         const totalFormsInput = $('#id_contactos-TOTAL_FORMS');
         const formIdx = parseInt(totalFormsInput.val());
         const emptyFormHtml = $('#empty-contact-form').html().replace(/__prefix__/g, formIdx);
-        
+
         $('#contactos-container').append(emptyFormHtml);
         totalFormsInput.val(formIdx + 1);
     });
@@ -550,7 +714,7 @@ $(document).ready(function() {
     $('#contactos-container').on('click', '.remove-contact', function() {
         var contactGroup = $(this).closest('.contact-group');
         var deleteCheckbox = contactGroup.find('input[name$="-DELETE"]');
-        
+
         if (deleteCheckbox.length) {
             // Si es un formulario existente, marcarlo para eliminación
             deleteCheckbox.prop('checked', true);
@@ -562,7 +726,34 @@ $(document).ready(function() {
         }
     });
 
-    // ... (resto del código JS) ...
+    // ==================================================
+    // --- VALIDACIÓN Y FEEDBACK VISUAL ---
+    // ==================================================
+
+    // Validar que al menos una opción esté seleccionada en firma
+    $('#proveedorForm').on('submit', function(e) {
+        let valid = true;
+
+        // Validar firma representante
+        const repWrapper = $('#sig-wrapper-rep');
+        const repUploadActive = repWrapper.find('.sig-toggle-btn[data-target="upload"]').hasClass('active');
+        const repHasFile = repWrapper.find('input[type="file"]').val();
+        const repHasSignature = signaturePadRep && !signaturePadRep.isEmpty();
+
+        // Validar autorización datos
+        const authWrapper = $('#sig-wrapper-auth');
+        const authUploadActive = authWrapper.find('.sig-toggle-btn[data-target="upload"]').hasClass('active');
+        const authHasFile = authWrapper.find('input[type="file"]').val();
+        const authHasSignature = signaturePadAuth && !signaturePadAuth.isEmpty();
+
+        // Si no hay ninguna firma/archivo, mostrar alerta (opcional - puedes comentar si no es requerido)
+        // if (!repHasSignature && !repHasFile && !authHasSignature && !authHasFile) {
+        //     alert('Por favor agregue al menos una firma o documento.');
+        //     valid = false;
+        // }
+
+        return valid;
+    });
 });
 </script>
 {% endblock %}

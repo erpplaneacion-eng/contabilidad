@@ -1,10 +1,21 @@
 from django import forms
 from django.forms import inlineformset_factory
 from .models import Proveedor, Contacto, Impuesto, DocumentoRequerido
+from core.models import Departamento, Municipio
 
 
 class ProveedorForm(forms.ModelForm):
     """Formulario para el modelo Proveedor"""
+    departamento = forms.ModelChoiceField(
+        queryset=Departamento.objects.all(),
+        label="Departamento",
+        widget=forms.Select(attrs={'class': 'form-select'})
+    )
+    ciudad = forms.ModelChoiceField(
+        queryset=Municipio.objects.none(),  # Se llena con JS
+        label="Ciudad/Municipio",
+        widget=forms.Select(attrs={'class': 'form-select'})
+    )
 
     class Meta:
         model = Proveedor
@@ -27,100 +38,22 @@ class ProveedorForm(forms.ModelForm):
             'sello',
         ]
         widgets = {
-            'fecha_diligenciamiento': forms.DateInput(
-                attrs={
-                    'type': 'date',
-                    'class': 'form-control'
-                }
-            ),
-            'nombre_razon_social': forms.TextInput(
-                attrs={
-                    'class': 'form-control',
-                    'placeholder': 'Ingrese el nombre o razón social'
-                }
-            ),
-            'naturaleza_juridica': forms.Select(
-                attrs={
-                    'class': 'form-select'
-                }
-            ),
-            'tipo_identificacion': forms.Select(
-                attrs={
-                    'class': 'form-select'
-                }
-            ),
-            'numero_identificacion': forms.TextInput(
-                attrs={
-                    'class': 'form-control',
-                    'placeholder': 'Ingrese el número de identificación'
-                }
-            ),
-            'direccion': forms.TextInput(
-                attrs={
-                    'class': 'form-control',
-                    'placeholder': 'Ingrese la dirección'
-                }
-            ),
-            'telefono': forms.TextInput(
-                attrs={
-                    'class': 'form-control',
-                    'placeholder': 'Ingrese el teléfono'
-                }
-            ),
-            'celular': forms.TextInput(
-                attrs={
-                    'class': 'form-control',
-                    'placeholder': 'Ingrese el celular'
-                }
-            ),
-            'pais': forms.TextInput(
-                attrs={
-                    'class': 'form-control',
-                    'value': 'Colombia'
-                }
-            ),
-            'departamento': forms.TextInput(
-                attrs={
-                    'class': 'form-control',
-                    'placeholder': 'Ingrese el departamento'
-                }
-            ),
-            'ciudad': forms.TextInput(
-                attrs={
-                    'class': 'form-control',
-                    'placeholder': 'Ingrese la ciudad'
-                }
-            ),
-            'condicion_pago': forms.Select(
-                attrs={
-                    'class': 'form-select'
-                }
-            ),
-            'condicion_pago_otro': forms.TextInput(
-                attrs={
-                    'class': 'form-control',
-                    'placeholder': 'Especifique otra condición de pago'
-                }
-            ),
-            'datos_representante_legal': forms.TextInput(
-                attrs={
-                    'class': 'form-control',
-                    'placeholder': 'Nombre completo del representante legal'
-                }
-            ),
-            'firma_representante': forms.ClearableFileInput(
-                attrs={
-                    'class': 'form-control',
-                    'accept': 'image/*'
-                }
-            ),
-            'sello': forms.ClearableFileInput(
-                attrs={
-                    'class': 'form-control',
-                    'accept': 'image/*'
-                }
-            ),
+            'fecha_diligenciamiento': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
+            'nombre_razon_social': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Ingrese el nombre o razón social'}),
+            'naturaleza_juridica': forms.Select(attrs={'class': 'form-select'}),
+            'tipo_identificacion': forms.Select(attrs={'class': 'form-select'}),
+            'numero_identificacion': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Ingrese el número de identificación'}),
+            'direccion': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Ingrese la dirección'}),
+            'telefono': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Ingrese el teléfono'}),
+            'celular': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Ingrese el celular'}),
+            'pais': forms.TextInput(attrs={'class': 'form-control', 'value': 'Colombia'}),
+            'condicion_pago': forms.Select(attrs={'class': 'form-select'}),
+            'condicion_pago_otro': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Especifique otra condición de pago'}),
+            'datos_representante_legal': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Nombre completo del representante legal'}),
+            'firma_representante': forms.ClearableFileInput(attrs={'class': 'form-control', 'accept': 'image/*'}),
+            'sello': forms.ClearableFileInput(attrs={'class': 'form-control', 'accept': 'image/*'}),
         }
+
 
 
 class ContactoForm(forms.ModelForm):
