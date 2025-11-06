@@ -142,7 +142,7 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # Login/Logout URLs
 LOGIN_URL = '/login/'
-LOGIN_REDIRECT_URL = '/dashboard/'  # ✅ Redirigir al dashboard principal después de login
+LOGIN_REDIRECT_URL = '/dashboard/dashboard/'  # ✅ Redirigir al dashboard principal después de login
 LOGOUT_REDIRECT_URL = '/login/'
 
 # Configuración adicional para Separador de Recibos PDF
