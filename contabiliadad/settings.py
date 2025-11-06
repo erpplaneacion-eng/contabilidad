@@ -153,24 +153,18 @@ USE_TZ = True
 STATIC_URL = '/static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 
-# Solo incluir STATICFILES_DIRS si el directorio existe y no es el mismo que STATIC_ROOT
-if (BASE_DIR / 'static').exists() and (BASE_DIR / 'static') != STATIC_ROOT:
-    STATICFILES_DIRS = [
-        BASE_DIR / 'static',
-    ]
-
-# WhiteNoise configuration para archivos estáticos en producción
-STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+# Directorios adicionales para archivos estáticos
+STATICFILES_DIRS = [
+    BASE_DIR / 'static',
+]
 
 # Cloudinary Configuration
 CLOUDINARY_CLOUD_NAME = config('CLOUDINARY_CLOUD_NAME', default='')
 CLOUDINARY_API_KEY = config('CLOUDINARY_API_KEY', default='')
 CLOUDINARY_API_SECRET = config('CLOUDINARY_API_SECRET', default='')
 
-# Media files (User uploaded files)
-# Si Cloudinary está configurado, usar Cloudinary, sino usar almacenamiento local
+# Configurar Cloudinary si las credenciales están disponibles
 if CLOUDINARY_CLOUD_NAME and CLOUDINARY_API_KEY and CLOUDINARY_API_SECRET:
-    # Producción: usar Cloudinary
     import cloudinary
     import cloudinary.uploader
     import cloudinary.api
@@ -182,12 +176,35 @@ if CLOUDINARY_CLOUD_NAME and CLOUDINARY_API_KEY and CLOUDINARY_API_SECRET:
         secure=True
     )
 
-    DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
+# Configuración de almacenamiento (Django 5.x)
+# Separar STATIC files (CSS/JS) de MEDIA files (uploads de usuarios)
+if CLOUDINARY_CLOUD_NAME and CLOUDINARY_API_KEY and CLOUDINARY_API_SECRET:
+    # Producción: WhiteNoise para static, Cloudinary para media
+    STORAGES = {
+        "default": {
+            "BACKEND": "cloudinary_storage.storage.MediaCloudinaryStorage",
+        },
+        "staticfiles": {
+            "BACKEND": "whitenoise.storage.CompressedStaticFilesStorage",
+        },
+    }
     MEDIA_URL = '/media/'
 else:
-    # Desarrollo: usar almacenamiento local
+    # Desarrollo: filesystem para ambos
+    STORAGES = {
+        "default": {
+            "BACKEND": "django.core.files.storage.FileSystemStorage",
+        },
+        "staticfiles": {
+            "BACKEND": "whitenoise.storage.CompressedStaticFilesStorage",
+        },
+    }
     MEDIA_URL = '/media/'
     MEDIA_ROOT = BASE_DIR / 'media'
+
+# Configuración adicional de WhiteNoise
+WHITENOISE_USE_FINDERS = True
+WHITENOISE_AUTOREFRESH = True if DEBUG else False
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
