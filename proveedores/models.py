@@ -1,5 +1,6 @@
 from django.db import models
 from django.core.validators import MinValueValidator, MaxValueValidator
+from core.models import Departamento, Municipio
 
 class Proveedor(models.Model):
     """Modelo principal para información general del proveedor"""
@@ -46,8 +47,20 @@ class Proveedor(models.Model):
     telefono = models.CharField(max_length=20, verbose_name='Teléfono')
     celular = models.CharField(max_length=20, verbose_name='Celular')
     pais = models.CharField(max_length=100, default='Colombia', verbose_name='País')
-    departamento = models.CharField(max_length=100, verbose_name='Departamento')
-    ciudad = models.CharField(max_length=100, verbose_name='Ciudad')
+    departamento = models.ForeignKey(
+        Departamento,
+        on_delete=models.PROTECT,
+        verbose_name='Departamento',
+        null=True,
+        blank=True
+    )
+    ciudad = models.ForeignKey(
+        Municipio,
+        on_delete=models.PROTECT,
+        verbose_name='Ciudad/Municipio',
+        null=True,
+        blank=True
+    )
 
     # Condiciones de Pago
     condicion_pago = models.CharField(
@@ -106,7 +119,13 @@ class Contacto(models.Model):
     cargo = models.CharField(max_length=100, verbose_name='Cargo')
     direccion = models.CharField(max_length=200, verbose_name='Dirección')
     correo_electronico = models.EmailField(verbose_name='Correo Electrónico')
-    ciudad = models.CharField(max_length=100, verbose_name='Ciudad')
+    ciudad = models.ForeignKey(
+        Municipio,
+        on_delete=models.PROTECT,
+        verbose_name='Ciudad/Municipio',
+        null=True,
+        blank=True
+    )
     telefono = models.CharField(max_length=20, verbose_name='Teléfono')
     celular = models.CharField(max_length=20, verbose_name='Celular')
 

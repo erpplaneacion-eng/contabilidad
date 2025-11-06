@@ -6,16 +6,29 @@ from core.models import Departamento, Municipio
 
 class ProveedorForm(forms.ModelForm):
     """Formulario para el modelo Proveedor"""
-    departamento = forms.ModelChoiceField(
-        queryset=Departamento.objects.all(),
-        label="Departamento",
-        widget=forms.Select(attrs={'class': 'form-select'})
-    )
-    ciudad = forms.ModelChoiceField(
-        queryset=Municipio.objects.none(),  # Se llena con JS
-        label="Ciudad/Municipio",
-        widget=forms.Select(attrs={'class': 'form-select'})
-    )
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        # Si es un POST, cargar municipios del departamento enviado
+        if self.data:
+            try:
+                departamento_id = self.data.get('departamento')
+                if departamento_id:
+                    self.fields['ciudad'].queryset = Municipio.objects.filter(
+                        departamento_id=departamento_id
+                    ).order_by('nombre_municipio')
+                else:
+                    self.fields['ciudad'].queryset = Municipio.objects.all()
+            except (ValueError, TypeError):
+                self.fields['ciudad'].queryset = Municipio.objects.all()
+        # Si es actualización y hay un departamento seleccionado, cargar sus municipios
+        elif self.instance and self.instance.pk and self.instance.departamento:
+            self.fields['ciudad'].queryset = Municipio.objects.filter(
+                departamento=self.instance.departamento
+            ).order_by('nombre_municipio')
+        else:
+            self.fields['ciudad'].queryset = Municipio.objects.none()
 
     class Meta:
         model = Proveedor
@@ -47,6 +60,8 @@ class ProveedorForm(forms.ModelForm):
             'telefono': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Ingrese el teléfono'}),
             'celular': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Ingrese el celular'}),
             'pais': forms.TextInput(attrs={'class': 'form-control', 'value': 'Colombia'}),
+            'departamento': forms.Select(attrs={'class': 'form-select'}),
+            'ciudad': forms.Select(attrs={'class': 'form-select'}),
             'condicion_pago': forms.Select(attrs={'class': 'form-select'}),
             'condicion_pago_otro': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Especifique otra condición de pago'}),
             'datos_representante_legal': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Nombre completo del representante legal'}),
@@ -95,10 +110,9 @@ class ContactoForm(forms.ModelForm):
                     'placeholder': 'correo@ejemplo.com'
                 }
             ),
-            'ciudad': forms.TextInput(
+            'ciudad': forms.Select(
                 attrs={
-                    'class': 'form-control',
-                    'placeholder': 'Ciudad'
+                    'class': 'form-select',
                 }
             ),
             'telefono': forms.TextInput(

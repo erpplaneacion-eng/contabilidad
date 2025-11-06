@@ -542,7 +542,7 @@ $(document).ready(function() {
         ciudadSelect.prop('disabled', true);
 
         if (departamentoId) {
-            fetch(`/core/api/municipios/${departamentoId}/`)
+            fetch(`/dashboard/api/municipios/${departamentoId}/`)
                 .then(response => response.json())
                 .then(data => {
                     if (data.length > 0) {
