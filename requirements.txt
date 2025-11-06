@@ -2,7 +2,7 @@ Django>=5.2.0
 
 # Producción
 gunicorn==21.2.0
-psycopg[binary]==3.1.18
+psycopg[binary]>=3.1.18
 python-decouple==3.8
 whitenoise==6.6.0
 dj-database-url==2.1.0
