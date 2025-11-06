@@ -1,0 +1,48 @@
+# Generated manually to make document fields and firma_representante required
+
+from django.db import migrations, models
+
+
+class Migration(migrations.Migration):
+
+    dependencies = [
+        ('proveedores', '0002_alter_contacto_ciudad_alter_impuesto_tipo_impuesto_and_more'),
+    ]
+
+    operations = [
+        migrations.AlterField(
+            model_name='proveedor',
+            name='firma_representante',
+            field=models.ImageField(upload_to='firmas/', verbose_name='Firma del Representante Legal'),
+        ),
+        migrations.AlterField(
+            model_name='documentorequerido',
+            name='fotocopia_rut',
+            field=models.FileField(upload_to='documentos/rut/', verbose_name='Fotocopia del RUT'),
+        ),
+        migrations.AlterField(
+            model_name='documentorequerido',
+            name='solicitud_vinculacion',
+            field=models.FileField(upload_to='documentos/solicitud/', verbose_name='Solicitud de Vinculación o Actualización'),
+        ),
+        migrations.AlterField(
+            model_name='documentorequerido',
+            name='certificado_camara_comercio',
+            field=models.FileField(upload_to='documentos/camara/', verbose_name='Certificado de Cámara y Comercio (No más de 30 días)'),
+        ),
+        migrations.AlterField(
+            model_name='documentorequerido',
+            name='certificacion_bancaria',
+            field=models.FileField(upload_to='documentos/bancaria/', verbose_name='Certificación Bancaria'),
+        ),
+        migrations.AlterField(
+            model_name='documentorequerido',
+            name='fotocopia_cc_representante',
+            field=models.FileField(upload_to='documentos/cc_representante/', verbose_name='Fotocopia C.C. Representante Legal'),
+        ),
+        migrations.AlterField(
+            model_name='documentorequerido',
+            name='autorizacion_datos',
+            field=models.FileField(upload_to='documentos/autorizacion/', verbose_name='Autorización para Recolección de Datos'),
+        ),
+    ]

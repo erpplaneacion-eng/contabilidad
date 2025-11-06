@@ -30,6 +30,10 @@ class ProveedorForm(forms.ModelForm):
         else:
             self.fields['ciudad'].queryset = Municipio.objects.none()
 
+        # Hacer que firma_representante no sea required en el HTML
+        # La validación se hará en clean() para verificar firma dibujada o archivo
+        self.fields['firma_representante'].required = False
+
     class Meta:
         model = Proveedor
         fields = [
@@ -132,6 +136,12 @@ class ContactoForm(forms.ModelForm):
 
 class DocumentoRequeridoForm(forms.ModelForm):
     """Formulario para el modelo DocumentoRequerido"""
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Hacer que autorizacion_datos no sea required en el HTML
+        # La validación se hará para verificar firma dibujada o archivo
+        self.fields['autorizacion_datos'].required = False
 
     class Meta:
         model = DocumentoRequerido

@@ -50,33 +50,13 @@
 
                 <div class="info-section mt-4 p-4 bg-light rounded">
                     <div class="row text-center">
-                        <div class="col-md-6 mb-3 mb-md-0">
-                            <i class="fas fa-envelope fa-2x text-primary mb-2"></i>
-                            <p class="mb-0">
-                                Recibirá una confirmación por correo electrónico con los detalles de su registro.
-                            </p>
-                        </div>
-                        <div class="col-md-6">
+                        <div class="col-md-12">
                             <i class="fas fa-phone fa-2x text-primary mb-2"></i>
                             <p class="mb-0">
                                 Si tiene alguna pregunta, puede contactarnos.
                             </p>
                         </div>
                     </div>
-                </div>
-
-                <div class="mt-5 text-center">
-                    <a href="{% url 'proveedores:registro_publico' %}" class="btn btn-primary btn-lg me-2 mb-2">
-                        <i class="fas fa-plus me-1"></i> Registrar Otro Proveedor
-                    </a>
-                    {% if user.is_authenticated %}
-                    <a href="{% url 'proveedores:editar' proveedor.pk %}" class="btn btn-outline-secondary btn-lg mb-2">
-                        <i class="fas fa-edit me-1"></i> Actualizar Información
-                    </a>
-                    <a href="{% url 'core:dashboard' %}" class="btn btn-outline-info btn-lg mb-2">
-                        <i class="fas fa-tachometer-alt me-1"></i> Ir al Dashboard
-                    </a>
-                    {% endif %}
                 </div>
 
                 <div class="mt-4 text-center">

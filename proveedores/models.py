@@ -1,6 +1,16 @@
 from django.db import models
 from django.core.validators import MinValueValidator, MaxValueValidator
 from core.models import Departamento, Municipio
+import os
+import uuid
+
+
+def upload_to_with_uuid(instance, filename):
+    """Genera un nombre de archivo único y corto usando UUID"""
+    ext = filename.split('.')[-1]
+    filename = f"{uuid.uuid4().hex[:12]}.{ext}"
+    return filename
+
 
 class Proveedor(models.Model):
     """Modelo principal para información general del proveedor"""
@@ -82,12 +92,12 @@ class Proveedor(models.Model):
     )
     firma_representante = models.ImageField(
         upload_to='firmas/',
-        blank=True,
-        null=True,
+        max_length=255,
         verbose_name='Firma del Representante Legal'
     )
     sello = models.ImageField(
         upload_to='sellos/',
+        max_length=255,
         blank=True,
         null=True,
         verbose_name='Sello'
@@ -222,38 +232,32 @@ class DocumentoRequerido(models.Model):
     # Documentos
     fotocopia_rut = models.FileField(
         upload_to='documentos/rut/',
-        blank=True,
-        null=True,
+        max_length=255,
         verbose_name='Fotocopia del RUT'
     )
     solicitud_vinculacion = models.FileField(
         upload_to='documentos/solicitud/',
-        blank=True,
-        null=True,
+        max_length=255,
         verbose_name='Solicitud de Vinculación o Actualización'
     )
     certificado_camara_comercio = models.FileField(
         upload_to='documentos/camara/',
-        blank=True,
-        null=True,
+        max_length=255,
         verbose_name='Certificado de Cámara y Comercio (No más de 30 días)'
     )
     certificacion_bancaria = models.FileField(
         upload_to='documentos/bancaria/',
-        blank=True,
-        null=True,
+        max_length=255,
         verbose_name='Certificación Bancaria'
     )
     fotocopia_cc_representante = models.FileField(
         upload_to='documentos/cc_representante/',
-        blank=True,
-        null=True,
+        max_length=255,
         verbose_name='Fotocopia C.C. Representante Legal'
     )
     autorizacion_datos = models.FileField(
         upload_to='documentos/autorizacion/',
-        blank=True,
-        null=True,
+        max_length=255,
         verbose_name='Autorización para Recolección de Datos'
     )
 

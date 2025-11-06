@@ -411,43 +411,43 @@
                     Por favor adjunte los siguientes documentos de su empresa.
                     <strong>Formatos aceptados:</strong> PDF, JPG, PNG (Máximo 10MB por archivo)
                 </p>
-                <div class="alert alert-info">
-                    <i class="fas fa-info-circle"></i>
-                    <strong>Nota:</strong> Estos documentos son necesarios para completar su registro como proveedor.
+                <div class="alert alert-warning">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <strong>Importante:</strong> Todos los documentos son obligatorios para completar su registro como proveedor.
                 </div>
 
                 <div class="row">
                     <div class="col-md-6 mb-3">
-                        <label for="{{ documento_form.fotocopia_rut.id_for_label }}" class="form-label">{{ documento_form.fotocopia_rut.label }}</label>
+                        <label for="{{ documento_form.fotocopia_rut.id_for_label }}" class="form-label required-field">{{ documento_form.fotocopia_rut.label }}</label>
                         {{ documento_form.fotocopia_rut }}
                         {% if documento_form.fotocopia_rut.errors %}<div class="text-danger">{{ documento_form.fotocopia_rut.errors }}</div>{% endif %}
                     </div>
                     <div class="col-md-6 mb-3">
-                        <label for="{{ documento_form.solicitud_vinculacion.id_for_label }}" class="form-label">{{ documento_form.solicitud_vinculacion.label }}</label>
+                        <label for="{{ documento_form.solicitud_vinculacion.id_for_label }}" class="form-label required-field">{{ documento_form.solicitud_vinculacion.label }}</label>
                         {{ documento_form.solicitud_vinculacion }}
                         {% if documento_form.solicitud_vinculacion.errors %}<div class="text-danger">{{ documento_form.solicitud_vinculacion.errors }}</div>{% endif %}
                     </div>
                 </div>
                 <div class="row">
                     <div class="col-md-6 mb-3">
-                        <label for="{{ documento_form.certificado_camara_comercio.id_for_label }}" class="form-label">{{ documento_form.certificado_camara_comercio.label }}</label>
+                        <label for="{{ documento_form.certificado_camara_comercio.id_for_label }}" class="form-label required-field">{{ documento_form.certificado_camara_comercio.label }}</label>
                         {{ documento_form.certificado_camara_comercio }}
                         {% if documento_form.certificado_camara_comercio.errors %}<div class="text-danger">{{ documento_form.certificado_camara_comercio.errors }}</div>{% endif %}
                     </div>
                     <div class="col-md-6 mb-3">
-                        <label for="{{ documento_form.certificacion_bancaria.id_for_label }}" class="form-label">{{ documento_form.certificacion_bancaria.label }}</label>
+                        <label for="{{ documento_form.certificacion_bancaria.id_for_label }}" class="form-label required-field">{{ documento_form.certificacion_bancaria.label }}</label>
                         {{ documento_form.certificacion_bancaria }}
                         {% if documento_form.certificacion_bancaria.errors %}<div class="text-danger">{{ documento_form.certificacion_bancaria.errors }}</div>{% endif %}
                     </div>
                 </div>
                 <div class="row">
                     <div class="col-md-6 mb-3">
-                        <label for="{{ documento_form.fotocopia_cc_representante.id_for_label }}" class="form-label">{{ documento_form.fotocopia_cc_representante.label }}</label>
+                        <label for="{{ documento_form.fotocopia_cc_representante.id_for_label }}" class="form-label required-field">{{ documento_form.fotocopia_cc_representante.label }}</label>
                         {{ documento_form.fotocopia_cc_representante }}
                         {% if documento_form.fotocopia_cc_representante.errors %}<div class="text-danger">{{ documento_form.fotocopia_cc_representante.errors }}</div>{% endif %}
                     </div>
                     <div class="col-md-6 mb-3">
-                        <label for="{{ documento_form.autorizacion_datos.id_for_label }}" class="form-label">{{ documento_form.autorizacion_datos.label }}</label>
+                        <label for="{{ documento_form.autorizacion_datos.id_for_label }}" class="form-label required-field">{{ documento_form.autorizacion_datos.label }}</label>
                         <div class="signature-wrapper" id="sig-wrapper-auth">
                             <div class="btn-group w-100 mb-2">
                                 <button type="button" class="btn btn-secondary active sig-toggle-btn" data-target="draw">Dibujar Firma</button>
@@ -483,7 +483,7 @@
                 </div>
                 <div class="row">
                     <div class="col-md-6 mb-3">
-                        <label for="{{ proveedor_form.firma_representante.id_for_label }}" class="form-label">{{ proveedor_form.firma_representante.label }}</label>
+                        <label for="{{ proveedor_form.firma_representante.id_for_label }}" class="form-label required-field">{{ proveedor_form.firma_representante.label }}</label>
                         <div class="signature-wrapper" id="sig-wrapper-rep">
                             <div class="btn-group w-100 mb-2">
                                 <button type="button" class="btn btn-secondary active sig-toggle-btn" data-target="draw">Dibujar Firma</button>
@@ -502,7 +502,7 @@
                             </div>
                             <input type="hidden" name="firma_representante_base64" id="firma_representante_base64">
                         </div>
-                        <small class="form-text">Puede dibujar su firma o subir una imagen.</small>
+                        <small class="form-text"><strong>Obligatorio:</strong> Puede dibujar su firma o subir una imagen.</small>
                         {% if proveedor_form.firma_representante.errors %}<div class="text-danger">{{ proveedor_form.firma_representante.errors }}</div>{% endif %}
                     </div>
                     <div class="col-md-6 mb-3">
@@ -652,20 +652,7 @@ $(document).ready(function() {
         }
     });
 
-    // Al enviar el formulario, guardar firmas en base64
-    $('#proveedorForm').on('submit', function(e) {
-        // Firma del representante
-        if (signaturePadRep && !signaturePadRep.isEmpty()) {
-            const dataURL = signaturePadRep.toDataURL('image/png');
-            $('#firma_representante_base64').val(dataURL);
-        }
-
-        // Autorización de datos
-        if (signaturePadAuth && !signaturePadAuth.isEmpty()) {
-            const dataURL = signaturePadAuth.toDataURL('image/png');
-            $('#autorizacion_datos_base64').val(dataURL);
-        }
-    });
+    // Validación y guardado de firmas al enviar formulario - se maneja más abajo
 
     // ==================================================
     // --- CAMPOS CONDICIONALES DE IMPUESTOS ---
@@ -727,30 +714,53 @@ $(document).ready(function() {
     });
 
     // ==================================================
-    // --- VALIDACIÓN Y FEEDBACK VISUAL ---
+    // --- VALIDACIÓN Y GUARDADO DE FIRMAS AL ENVIAR ---
     // ==================================================
 
-    // Validar que al menos una opción esté seleccionada en firma
     $('#proveedorForm').on('submit', function(e) {
         let valid = true;
+        let errorMessages = [];
 
-        // Validar firma representante
+        // Guardar firma del representante en base64 si está dibujada
+        if (signaturePadRep && !signaturePadRep.isEmpty()) {
+            const dataURL = signaturePadRep.toDataURL('image/png');
+            $('#firma_representante_base64').val(dataURL);
+        }
+
+        // Guardar autorización de datos en base64 si está dibujada
+        if (signaturePadAuth && !signaturePadAuth.isEmpty()) {
+            const dataURL = signaturePadAuth.toDataURL('image/png');
+            $('#autorizacion_datos_base64').val(dataURL);
+        }
+
+        // Validar firma representante - debe tener dibujada O archivo
         const repWrapper = $('#sig-wrapper-rep');
-        const repUploadActive = repWrapper.find('.sig-toggle-btn[data-target="upload"]').hasClass('active');
         const repHasFile = repWrapper.find('input[type="file"]').val();
         const repHasSignature = signaturePadRep && !signaturePadRep.isEmpty();
+        const repHasBase64 = $('#firma_representante_base64').val();
 
-        // Validar autorización datos
+        if (!repHasSignature && !repHasFile && !repHasBase64) {
+            errorMessages.push('- Firma del Representante Legal (debe dibujar la firma o subir un archivo)');
+            valid = false;
+        }
+
+        // Validar autorización datos - debe tener dibujada O archivo
         const authWrapper = $('#sig-wrapper-auth');
-        const authUploadActive = authWrapper.find('.sig-toggle-btn[data-target="upload"]').hasClass('active');
         const authHasFile = authWrapper.find('input[type="file"]').val();
         const authHasSignature = signaturePadAuth && !signaturePadAuth.isEmpty();
+        const authHasBase64 = $('#autorizacion_datos_base64').val();
 
-        // Si no hay ninguna firma/archivo, mostrar alerta (opcional - puedes comentar si no es requerido)
-        // if (!repHasSignature && !repHasFile && !authHasSignature && !authHasFile) {
-        //     alert('Por favor agregue al menos una firma o documento.');
-        //     valid = false;
-        // }
+        if (!authHasSignature && !authHasFile && !authHasBase64) {
+            errorMessages.push('- Autorización para Recolección de Datos (debe dibujar la firma o subir un archivo)');
+            valid = false;
+        }
+
+        // Mostrar alerta con los campos faltantes
+        if (!valid) {
+            e.preventDefault();
+            alert('Por favor complete los siguientes campos obligatorios:\n\n' + errorMessages.join('\n'));
+            return false;
+        }
 
         return valid;
     });
