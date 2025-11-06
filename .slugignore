@@ -1,0 +1,15 @@
+# Archivos y directorios a ignorar durante el despliegue
+*.pyc
+__pycache__/
+.git/
+.gitignore
+*.md
+tests/
+docs/
+.vscode/
+.idea/
+*.log
+db.sqlite3
+media/
+staticfiles/
+.env.example

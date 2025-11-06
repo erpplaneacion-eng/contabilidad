@@ -1,0 +1,53 @@
+{% extends "emails/base_email.html" %}
+
+{% block title %}Nueva Factura Recibida - {{ numero_factura }}{% endblock %}
+
+{% block header %}Nueva Factura Recibida{% endblock %}
+
+{% block content %}
+<h2 style="color: #333; margin-top: 0;">Factura #{{ numero_factura }}</h2>
+
+<p>Se ha recibido una nueva factura para procesamiento en el sistema:</p>
+
+<div class="info-box">
+    <table style="width: 100%; border-collapse: collapse;">
+        <tr>
+            <td style="padding: 8px 0; font-weight: bold; width: 40%;">Número de Factura:</td>
+            <td style="padding: 8px 0;">{{ numero_factura }}</td>
+        </tr>
+        {% if proveedor %}
+        <tr>
+            <td style="padding: 8px 0; font-weight: bold;">Proveedor:</td>
+            <td style="padding: 8px 0;">{{ proveedor }}</td>
+        </tr>
+        {% endif %}
+        {% if monto %}
+        <tr>
+            <td style="padding: 8px 0; font-weight: bold;">Monto:</td>
+            <td style="padding: 8px 0;">{{ monto }}</td>
+        </tr>
+        {% endif %}
+        {% if fecha %}
+        <tr>
+            <td style="padding: 8px 0; font-weight: bold;">Fecha:</td>
+            <td style="padding: 8px 0;">{{ fecha }}</td>
+        </tr>
+        {% endif %}
+    </table>
+</div>
+
+<p>Por favor revise la factura en el sistema a la mayor brevedad posible.</p>
+
+{% if url_sistema %}
+<p style="text-align: center;">
+    <a href="{{ url_sistema }}" class="button">Ver en el Sistema</a>
+</p>
+{% endif %}
+
+{% if notas %}
+<div class="warning-box">
+    <strong>Notas:</strong>
+    <p style="margin: 10px 0 0 0;">{{ notas }}</p>
+</div>
+{% endif %}
+{% endblock %}
