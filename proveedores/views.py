@@ -4,7 +4,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db import transaction
 from django.views.generic import ListView, DetailView
-from django.urls import reverse_lazy
+from django.urls import reverse_lazy, reverse
 from django.http import JsonResponse
 from django.core.files.base import ContentFile
 import base64
@@ -17,6 +17,7 @@ from .forms import (
     ImpuestosProveedorForm,
     DocumentoRequeridoForm
 )
+from core.utils import notificar_nuevo_proveedor
 
 def base64_to_file(data_url):
     """Convierte una URL de datos base64 en un ContentFile de Django."""
@@ -64,6 +65,24 @@ def proveedor_form_view(request):
                     documento = documento_form.save(commit=False)
                     documento.proveedor = proveedor
                     documento.save()
+
+                    # Enviar notificación por correo
+                    try:
+                        url_proveedor = request.build_absolute_uri(
+                            reverse('proveedores:detalle', args=[proveedor.pk])
+                        )
+                        notificar_nuevo_proveedor(
+                            proveedor=proveedor,
+                            contactos=proveedor.contactos.all(),
+                            impuestos=proveedor.impuestos.all(),
+                            url_sistema=url_proveedor
+                        )
+                    except Exception as e:
+                        # Si falla el correo, solo registrar el error pero no interrumpir el flujo
+                        import logging
+                        logger = logging.getLogger(__name__)
+                        logger.error(f'Error al enviar notificación de nuevo proveedor: {str(e)}')
+
                     messages.success(request, f'¡Registro exitoso! El proveedor {proveedor.nombre_razon_social} ha sido registrado.')
                     return redirect('proveedores:success', pk=proveedor.pk)
             except Exception as e:

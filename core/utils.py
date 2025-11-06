@@ -255,3 +255,72 @@ def notificar_error_procesamiento(descripcion_error, detalles=None):
         mensaje=mensaje,
         fail_silently=True  # No fallar silenciosamente en errores críticos
     )
+
+
+def notificar_nuevo_proveedor(proveedor, contactos=None, impuestos=None, url_sistema=None):
+    """
+    Envía una notificación cuando se registra un nuevo proveedor.
+
+    Args:
+        proveedor: Instancia del modelo Proveedor
+        contactos (list, optional): Lista de contactos del proveedor
+        impuestos (list, optional): Lista de impuestos del proveedor
+        url_sistema (str, optional): URL para ver el proveedor en el sistema
+
+    Returns:
+        bool: True si se envió correctamente
+
+    Ejemplo de uso:
+        from core.utils import notificar_nuevo_proveedor
+
+        notificar_nuevo_proveedor(
+            proveedor=proveedor,
+            contactos=proveedor.contactos.all(),
+            impuestos=proveedor.impuestos.all(),
+            url_sistema=request.build_absolute_uri(reverse('proveedores:detalle', args=[proveedor.pk]))
+        )
+    """
+    from django.utils import timezone
+
+    # Mapeo de naturaleza jurídica para mostrar texto legible
+    naturaleza_juridica_map = {
+        'PERSONA_NATURAL': 'Persona Natural',
+        'PERSONA_JURIDICA': 'Persona Jurídica',
+        'SOCIEDAD': 'Sociedad',
+        'ENTIDAD_PUBLICA': 'Entidad Pública',
+        'EXTRANJERO': 'Extranjero'
+    }
+
+    asunto = f'Nuevo Proveedor Registrado - {proveedor.nombre_razon_social}'
+
+    # Preparar contexto para el template
+    context = {
+        'proveedor': proveedor,
+        'naturaleza_juridica_display': naturaleza_juridica_map.get(
+            proveedor.naturaleza_juridica,
+            proveedor.naturaleza_juridica
+        ),
+        'fecha_registro': timezone.localtime(proveedor.fecha_creacion).strftime('%d/%m/%Y %I:%M %p'),
+        'contactos': contactos if contactos else [],
+        'impuestos': [],
+        'url_sistema': url_sistema,
+        'observaciones': None
+    }
+
+    # Preparar información de impuestos (solo los que aplican)
+    if impuestos:
+        context['impuestos'] = [
+            {
+                'tipo_impuesto_display': imp.get_tipo_impuesto_display(),
+                'porcentaje': imp.porcentaje
+            }
+            for imp in impuestos if imp.aplica
+        ]
+
+    # Enviar correo usando template
+    return enviar_correo_desde_template(
+        asunto=asunto,
+        template_name='emails/notificacion_proveedor.html',
+        context=context,
+        fail_silently=True  # No fallar para no interrumpir el proceso de registro
+    )

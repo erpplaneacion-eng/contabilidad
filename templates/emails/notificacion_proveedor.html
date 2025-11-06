@@ -1,0 +1,104 @@
+{% extends "emails/base_email.html" %}
+
+{% block title %}Nuevo Proveedor Registrado - {{ proveedor.nombre_razon_social }}{% endblock %}
+
+{% block header %}Nuevo Proveedor Registrado{% endblock %}
+
+{% block content %}
+<h2 style="color: #333; margin-top: 0;">{{ proveedor.nombre_razon_social }}</h2>
+
+<p>Se ha registrado un nuevo proveedor en el sistema de contabilidad CHVS:</p>
+
+<div class="info-box">
+    <table style="width: 100%; border-collapse: collapse;">
+        <tr>
+            <td style="padding: 8px 0; font-weight: bold; width: 40%;">Nombre/Razón Social:</td>
+            <td style="padding: 8px 0;">{{ proveedor.nombre_razon_social }}</td>
+        </tr>
+        <tr>
+            <td style="padding: 8px 0; font-weight: bold;">{{ proveedor.get_tipo_identificacion_display }}:</td>
+            <td style="padding: 8px 0;">{{ proveedor.numero_identificacion }}</td>
+        </tr>
+        <tr>
+            <td style="padding: 8px 0; font-weight: bold;">Tipo de Persona:</td>
+            <td style="padding: 8px 0;">{{ naturaleza_juridica_display }}</td>
+        </tr>
+        {% if proveedor.municipio %}
+        <tr>
+            <td style="padding: 8px 0; font-weight: bold;">Ciudad:</td>
+            <td style="padding: 8px 0;">{{ proveedor.municipio }}</td>
+        </tr>
+        {% endif %}
+        {% if proveedor.direccion %}
+        <tr>
+            <td style="padding: 8px 0; font-weight: bold;">Dirección:</td>
+            <td style="padding: 8px 0;">{{ proveedor.direccion }}</td>
+        </tr>
+        {% endif %}
+        {% if proveedor.correo_electronico %}
+        <tr>
+            <td style="padding: 8px 0; font-weight: bold;">Correo:</td>
+            <td style="padding: 8px 0;">{{ proveedor.correo_electronico }}</td>
+        </tr>
+        {% endif %}
+        {% if proveedor.telefono %}
+        <tr>
+            <td style="padding: 8px 0; font-weight: bold;">Teléfono:</td>
+            <td style="padding: 8px 0;">{{ proveedor.telefono }}</td>
+        </tr>
+        {% endif %}
+        <tr>
+            <td style="padding: 8px 0; font-weight: bold;">Fecha de Registro:</td>
+            <td style="padding: 8px 0;">{{ fecha_registro }}</td>
+        </tr>
+    </table>
+</div>
+
+{% if contactos %}
+<h3 style="color: #333; margin-top: 20px; margin-bottom: 10px;">Contactos Registrados</h3>
+<div class="info-box" style="background-color: #f8f9fa;">
+    {% for contacto in contactos %}
+    <div style="padding: 10px 0; {% if not forloop.last %}border-bottom: 1px solid #dee2e6;{% endif %}">
+        <strong>{{ contacto.nombre_apellidos }}</strong>
+        {% if contacto.cargo %} - {{ contacto.cargo }}{% endif %}
+        <br>
+        {% if contacto.correo_electronico %}
+        <span style="color: #666;">Correo: {{ contacto.correo_electronico }}</span>
+        {% endif %}
+        {% if contacto.telefono %}
+        <span style="color: #666;"> | Tel: {{ contacto.telefono }}</span>
+        {% endif %}
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
+
+{% if impuestos %}
+<h3 style="color: #333; margin-top: 20px; margin-bottom: 10px;">Información Tributaria</h3>
+<div class="info-box" style="background-color: #fff3cd;">
+    <table style="width: 100%; border-collapse: collapse;">
+        {% for impuesto in impuestos %}
+        <tr>
+            <td style="padding: 8px 0; font-weight: bold; width: 40%;">{{ impuesto.tipo_impuesto_display }}:</td>
+            <td style="padding: 8px 0;">{{ impuesto.porcentaje }}%</td>
+        </tr>
+        {% endfor %}
+    </table>
+</div>
+{% endif %}
+
+<p style="margin-top: 20px;">Por favor revise y valide la información del proveedor en el sistema.</p>
+
+{% if url_sistema %}
+<p style="text-align: center;">
+    <a href="{{ url_sistema }}" class="button">Ver Proveedor en el Sistema</a>
+</p>
+{% endif %}
+
+{% if observaciones %}
+<div class="warning-box">
+    <strong>Observaciones:</strong>
+    <p style="margin: 10px 0 0 0;">{{ observaciones }}</p>
+</div>
+{% endif %}
+{% endblock %}
