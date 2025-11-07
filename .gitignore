@@ -102,3 +102,5 @@ settings_local.py
 client_secret.json
 google_oauth_credentials.json
 *.json.backup
+token.json
+credentials.json

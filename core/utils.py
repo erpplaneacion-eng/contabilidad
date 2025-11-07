@@ -7,8 +7,105 @@ from django.conf import settings
 from django.template.loader import render_to_string
 from django.utils.html import strip_tags
 import logging
+import os
+import json
+import base64
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
+from google.oauth2.credentials import Credentials
+from google.auth.transport.requests import Request
+from googleapiclient.discovery import build
 
 logger = logging.getLogger(__name__)
+
+# Scope para Gmail API
+GMAIL_SCOPES = ['https://www.googleapis.com/auth/gmail.send']
+
+
+def enviar_con_gmail_api(asunto, mensaje_html, mensaje_texto, destinatarios):
+    """
+    Envía correo usando Gmail API (MÁS RÁPIDO que SMTP).
+    Esta es la misma implementación que funciona en GESTION_HUMANA_CHVS.
+
+    Returns:
+        bool: True si se envió exitosamente, False si falló
+    """
+    try:
+        # Cargar credenciales: primero de variable de entorno (Railway) o archivo (desarrollo local)
+        token_data = None
+
+        # Intentar cargar desde variable de entorno (Railway)
+        gmail_token_json = os.getenv('GMAIL_TOKEN_JSON')
+        if gmail_token_json:
+            try:
+                token_data = json.loads(gmail_token_json)
+                logger.info('Credenciales de Gmail API cargadas desde variable de entorno')
+            except json.JSONDecodeError as e:
+                logger.error(f'Error parseando GMAIL_TOKEN_JSON: {str(e)}')
+                return False
+
+        # Si no hay variable de entorno, intentar cargar desde archivo (desarrollo local)
+        if not token_data:
+            BASE_DIR = settings.BASE_DIR
+            token_path = BASE_DIR / 'token.json'
+
+            if token_path.exists():
+                try:
+                    with open(token_path, 'r') as token_file:
+                        token_data = json.load(token_file)
+                    logger.info(f'Credenciales de Gmail API cargadas desde {token_path}')
+                except Exception as e:
+                    logger.error(f'Error leyendo token.json: {str(e)}')
+                    return False
+            else:
+                logger.warning(f'No se encontró token.json en {token_path} ni variable GMAIL_TOKEN_JSON')
+                # Si no hay token de Gmail API, retornar False para usar SMTP como fallback
+                return False
+
+        # Crear credenciales desde el token
+        creds = Credentials(
+            token=token_data.get('token'),
+            refresh_token=token_data.get('refresh_token'),
+            token_uri=token_data.get('token_uri'),
+            client_id=token_data.get('client_id'),
+            client_secret=token_data.get('client_secret'),
+            scopes=token_data.get('scopes', GMAIL_SCOPES)
+        )
+
+        # Refrescar el token si es necesario
+        if creds.expired and creds.refresh_token:
+            creds.refresh(Request())
+
+        # Construir el servicio de Gmail
+        service = build('gmail', 'v1', credentials=creds)
+
+        # Crear mensaje de correo
+        message = MIMEMultipart('alternative')
+        message['To'] = ', '.join(destinatarios) if isinstance(destinatarios, list) else destinatarios
+        message['From'] = settings.DEFAULT_FROM_EMAIL
+        message['Subject'] = asunto
+
+        # Adjuntar contenido HTML
+        if mensaje_html:
+            html_part = MIMEText(mensaje_html, 'html', 'utf-8')
+            message.attach(html_part)
+        else:
+            text_part = MIMEText(mensaje_texto, 'plain', 'utf-8')
+            message.attach(text_part)
+
+        # Codificar el mensaje en base64
+        raw_message = base64.urlsafe_b64encode(message.as_bytes()).decode('utf-8')
+        send_message = {'raw': raw_message}
+
+        # Enviar correo
+        service.users().messages().send(userId='me', body=send_message).execute()
+
+        logger.info(f'Correo enviado exitosamente vía Gmail API a {destinatarios}')
+        return True
+
+    except Exception as e:
+        logger.error(f'Error al enviar correo vía Gmail API: {str(e)}')
+        return False
 
 
 def enviar_correo_notificacion(
@@ -17,7 +114,8 @@ def enviar_correo_notificacion(
     destinatarios=None,
     html_mensaje=None,
     archivo_adjunto=None,
-    fail_silently=False
+    fail_silently=False,
+    timeout=30
 ):
     """
     Envía un correo de notificación.
@@ -62,18 +160,33 @@ def enviar_correo_notificacion(
         if destinatarios is None:
             destinatarios = [settings.NOTIFICATION_EMAIL]
 
-        # Verificar configuración de email antes de enviar
+        # INTENTO 1: Intentar Gmail API primero (MÁS RÁPIDO - mismo método que GESTION_HUMANA)
+        if archivo_adjunto is None:  # Gmail API solo si no hay adjuntos
+            logger.info("Intentando enviar vía Gmail API (método rápido)...")
+            api_exitoso = enviar_con_gmail_api(
+                asunto=asunto,
+                mensaje_html=html_mensaje,
+                mensaje_texto=mensaje,
+                destinatarios=destinatarios
+            )
+
+            if api_exitoso:
+                logger.info("✅ Correo enviado exitosamente vía Gmail API")
+                return True
+            else:
+                logger.warning("Gmail API no disponible o falló, intentando con SMTP...")
+
+        # INTENTO 2: SMTP como fallback (si Gmail API no está disponible o tiene adjuntos)
+        # Verificar configuración de SMTP
         if not settings.EMAIL_HOST_USER or not settings.EMAIL_HOST_PASSWORD:
-            logger.error("Configuración de email incompleta. Verifique EMAIL_HOST_USER y EMAIL_HOST_PASSWORD en variables de entorno.")
+            logger.error("Configuración de SMTP incompleta. Verifique EMAIL_HOST_USER y EMAIL_HOST_PASSWORD.")
             logger.error(f"EMAIL_HOST_USER configurado: {'Sí' if settings.EMAIL_HOST_USER else 'No'}")
             logger.error(f"EMAIL_HOST_PASSWORD configurado: {'Sí' if settings.EMAIL_HOST_PASSWORD else 'No'}")
-            logger.error(f"EMAIL_HOST: {settings.EMAIL_HOST}")
-            logger.error(f"EMAIL_PORT: {settings.EMAIL_PORT}")
             return False
 
         # Si no hay archivo adjunto, usar send_mail simple
         if archivo_adjunto is None:
-            logger.info(f"Intentando enviar correo a {', '.join(destinatarios)} desde {settings.DEFAULT_FROM_EMAIL}")
+            logger.info(f"Intentando enviar correo vía SMTP a {', '.join(destinatarios)}")
 
             resultado = send_mail(
                 subject=asunto,
@@ -85,7 +198,7 @@ def enviar_correo_notificacion(
             )
 
             if resultado > 0:
-                logger.info(f"Correo enviado exitosamente a {', '.join(destinatarios)}")
+                logger.info(f"Correo enviado exitosamente vía SMTP a {', '.join(destinatarios)}")
                 return True
             else:
                 logger.warning(f"No se pudo enviar el correo a {', '.join(destinatarios)}")
