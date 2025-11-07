@@ -62,8 +62,19 @@ def enviar_correo_notificacion(
         if destinatarios is None:
             destinatarios = [settings.NOTIFICATION_EMAIL]
 
+        # Verificar configuración de email antes de enviar
+        if not settings.EMAIL_HOST_USER or not settings.EMAIL_HOST_PASSWORD:
+            logger.error("Configuración de email incompleta. Verifique EMAIL_HOST_USER y EMAIL_HOST_PASSWORD en variables de entorno.")
+            logger.error(f"EMAIL_HOST_USER configurado: {'Sí' if settings.EMAIL_HOST_USER else 'No'}")
+            logger.error(f"EMAIL_HOST_PASSWORD configurado: {'Sí' if settings.EMAIL_HOST_PASSWORD else 'No'}")
+            logger.error(f"EMAIL_HOST: {settings.EMAIL_HOST}")
+            logger.error(f"EMAIL_PORT: {settings.EMAIL_PORT}")
+            return False
+
         # Si no hay archivo adjunto, usar send_mail simple
         if archivo_adjunto is None:
+            logger.info(f"Intentando enviar correo a {', '.join(destinatarios)} desde {settings.DEFAULT_FROM_EMAIL}")
+
             resultado = send_mail(
                 subject=asunto,
                 message=mensaje,
@@ -78,6 +89,7 @@ def enviar_correo_notificacion(
                 return True
             else:
                 logger.warning(f"No se pudo enviar el correo a {', '.join(destinatarios)}")
+                logger.warning(f"send_mail() retornó: {resultado}")
                 return False
 
         # Si hay archivo adjunto, usar EmailMessage

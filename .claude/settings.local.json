@@ -4,7 +4,8 @@
       "Bash(git push:*)",
       "Bash(find:*)",
       "Bash(python manage.py makemigrations:*)",
-      "Bash(python3 manage.py makemigrations:*)"
+      "Bash(python3 manage.py makemigrations:*)",
+      "Bash(cat:*)"
     ],
     "deny": [],
     "ask": []
