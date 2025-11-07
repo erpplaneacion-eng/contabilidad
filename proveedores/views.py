@@ -9,6 +9,8 @@ from django.http import JsonResponse
 from django.core.files.base import ContentFile
 import base64
 import re
+import threading
+import logging
 
 from .models import Proveedor, Contacto, Impuesto, DocumentoRequerido
 from .forms import (
@@ -18,6 +20,31 @@ from .forms import (
     DocumentoRequeridoForm
 )
 from core.utils import notificar_nuevo_proveedor
+
+logger = logging.getLogger(__name__)
+
+
+def enviar_notificacion_async(proveedor_id, url_proveedor):
+    """
+    Envía la notificación de nuevo proveedor en un hilo separado.
+    Esto evita que el timeout de Gunicorn afecte la respuesta al usuario.
+    """
+    try:
+        # Obtener el proveedor desde la BD (en el hilo separado)
+        proveedor = Proveedor.objects.get(pk=proveedor_id)
+
+        # Enviar notificación por correo
+        notificar_nuevo_proveedor(
+            proveedor=proveedor,
+            contactos=proveedor.contactos.all(),
+            impuestos=proveedor.impuestos.all(),
+            url_sistema=url_proveedor
+        )
+        logger.info(f'Notificación enviada exitosamente para proveedor {proveedor_id}')
+    except Exception as e:
+        # Si falla el correo, solo registrar el error
+        logger.error(f'Error al enviar notificación de nuevo proveedor {proveedor_id}: {str(e)}')
+
 
 def base64_to_file(data_url):
     """Convierte una URL de datos base64 en un ContentFile de Django."""
@@ -66,22 +93,22 @@ def proveedor_form_view(request):
                     documento.proveedor = proveedor
                     documento.save()
 
-                    # Enviar notificación por correo
+                    # Enviar notificación por correo en un hilo separado (no bloqueante)
                     try:
                         url_proveedor = request.build_absolute_uri(
                             reverse('proveedores:detalle', args=[proveedor.pk])
                         )
-                        notificar_nuevo_proveedor(
-                            proveedor=proveedor,
-                            contactos=proveedor.contactos.all(),
-                            impuestos=proveedor.impuestos.all(),
-                            url_sistema=url_proveedor
+                        # Iniciar thread para enviar correo sin bloquear la respuesta
+                        thread = threading.Thread(
+                            target=enviar_notificacion_async,
+                            args=(proveedor.pk, url_proveedor),
+                            daemon=True
                         )
+                        thread.start()
+                        logger.info(f'Thread de notificación iniciado para proveedor {proveedor.pk}')
                     except Exception as e:
-                        # Si falla el correo, solo registrar el error pero no interrumpir el flujo
-                        import logging
-                        logger = logging.getLogger(__name__)
-                        logger.error(f'Error al enviar notificación de nuevo proveedor: {str(e)}')
+                        # Si falla al iniciar el thread, solo registrar el error
+                        logger.error(f'Error al iniciar thread de notificación: {str(e)}')
 
                     messages.success(request, f'¡Registro exitoso! El proveedor {proveedor.nombre_razon_social} ha sido registrado.')
                     return redirect('proveedores:success', pk=proveedor.pk)
