@@ -9,6 +9,7 @@ from .models import ProcesamientoRecibo, ReciboDetectado
 from .utils.pdf_processor import PDFProcessor
 from .utils.image_extractor import ImageExtractor
 from .utils.pdf_generator import PDFGenerator
+from .utils.storage_utils import StorageHelper
 from django.core.files.base import ContentFile
 
 logger = logging.getLogger(__name__)
@@ -35,21 +36,26 @@ def procesar_recibo_pdf(procesamiento_id, calidad_imagen='media'):
         # Verificar que el archivo existe
         if not procesamiento.archivo_original:
             raise FileNotFoundError("Archivo PDF no encontrado")
-        
-        pdf_path = procesamiento.archivo_original.path
-        
-        # Paso 1: Detectar recibos
-        logger.info("Detectando recibos en el PDF...")
-        processor = PDFProcessor(pdf_path)
-        recibos_detectados = processor.detectar_recibos_coordenadas()
-        
-        if not recibos_detectados:
-            raise ValueError("No se encontraron recibos en el archivo PDF")
-        
-        # Paso 2: Extraer imágenes con la calidad especificada
-        logger.info(f"Extrayendo imágenes de recibos con calidad: {calidad_imagen}...")
-        extractor = ImageExtractor(pdf_path)
-        imagenes_data = extractor.procesar_y_guardar_imagenes(recibos_detectados, procesamiento_id, calidad_imagen=calidad_imagen)
+
+        # Obtener path local del archivo (descarga temporalmente si está en Cloudinary)
+        pdf_path, pdf_es_temporal = StorageHelper.obtener_path_archivo(procesamiento.archivo_original)
+
+        try:
+            # Paso 1: Detectar recibos
+            logger.info("Detectando recibos en el PDF...")
+            processor = PDFProcessor(pdf_path)
+            recibos_detectados = processor.detectar_recibos_coordenadas()
+
+            if not recibos_detectados:
+                raise ValueError("No se encontraron recibos en el archivo PDF")
+
+            # Paso 2: Extraer imágenes con la calidad especificada
+            logger.info(f"Extrayendo imágenes de recibos con calidad: {calidad_imagen}...")
+            extractor = ImageExtractor(pdf_path)
+            imagenes_data = extractor.procesar_y_guardar_imagenes(recibos_detectados, procesamiento_id, calidad_imagen=calidad_imagen)
+        finally:
+            # Limpiar archivo temporal del PDF si fue descargado
+            StorageHelper.limpiar_archivo_temporal(pdf_path, pdf_es_temporal)
         
         # Paso 3: Guardar información en base de datos
         logger.info("Guardando información de recibos en base de datos...")
@@ -119,14 +125,20 @@ def procesar_recibo_pdf(procesamiento_id, calidad_imagen='media'):
             imagen_data = {}
             if recibo_db.imagen_recibo:
                 try:
-                    with open(recibo_db.imagen_recibo.path, 'rb') as f:
-                        imagen_data['imagen_data'] = f.read()
+                    # Usar StorageHelper para manejar archivos locales y remotos
+                    imagen_path, imagen_es_temporal = StorageHelper.obtener_path_archivo(recibo_db.imagen_recibo)
+                    try:
+                        with open(imagen_path, 'rb') as f:
+                            imagen_data['imagen_data'] = f.read()
+                    finally:
+                        # Limpiar archivo temporal de imagen si fue descargado
+                        StorageHelper.limpiar_archivo_temporal(imagen_path, imagen_es_temporal)
                 except Exception as e:
                     logger.warning(f"Error leyendo imagen para recibo {recibo_db.numero_secuencial}: {str(e)}")
                     imagen_data['imagen_data'] = None
             else:
                 imagen_data['imagen_data'] = None
-            
+
             imagenes_generadas.append(imagen_data)
         
         # Generar PDF
