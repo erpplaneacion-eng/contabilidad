@@ -72,12 +72,14 @@ def procesar_recibo_pdf(procesamiento_id, calidad_imagen='media'):
                     nombre_beneficiario=recibo_info.get('beneficiario', ''),
                     valor=recibo_info.get('valor'),
                     entidad_bancaria=recibo_info.get('entidad', ''),
-                    numero_cuenta=recibo_info.get('cuenta', ''),
+                    numero_cuenta=recibo_info.get('numero_cuenta', ''),
                     referencia=recibo_info.get('referencia', ''),
                     fecha_aplicacion=recibo_info.get('fecha'),
                     concepto=recibo_info.get('concepto', ''),
                     estado_pago=recibo_info.get('estado', ''),
-                    texto_extraido=recibo_info.get('texto_completo', '')
+                    texto_extraido=recibo_info.get('texto_completo', ''),
+                    tipo_cuenta=recibo_info.get('tipo_cuenta', ''),
+                    documento=recibo_info.get('documento', ''),
                 )
                 
                 # Guardar imagen si está disponible
@@ -97,11 +99,7 @@ def procesar_recibo_pdf(procesamiento_id, calidad_imagen='media'):
         
         # Paso 4: Generar PDF separado
         logger.info("Generando PDF separado...")
-        output_path = f"media/pdfs_procesados/recibos_separados_{procesamiento_id}.pdf"
-        
-        # Asegurar que el directorio existe
-        os.makedirs(os.path.dirname(output_path), exist_ok=True)
-        
+
         # Obtener datos de recibos para el generador
         recibos_db = ReciboDetectado.objects.filter(procesamiento=procesamiento)
         recibos_data = []
@@ -141,16 +139,55 @@ def procesar_recibo_pdf(procesamiento_id, calidad_imagen='media'):
 
             imagenes_generadas.append(imagen_data)
         
-        # Generar PDF
-        generator = PDFGenerator(output_path)
+        generator = PDFGenerator()
+        archivo_principal = None
+        archivo_texto = None
+
         try:
-            generator.generar_pdf_con_imagenes(recibos_data, imagenes_generadas)
+            if procesamiento.formato_salida == 'pdf_imagenes':
+                archivo_principal = generator.generar_pdf_con_imagenes(recibos_data, imagenes_generadas)
+            elif procesamiento.formato_salida == 'pdf_texto':
+                archivo_principal = generator.generar_pdf_simple(recibos_data)
+            elif procesamiento.formato_salida == 'ambos':
+                archivo_principal = generator.generar_pdf_con_imagenes(recibos_data, imagenes_generadas)
+                archivo_texto = PDFGenerator().generar_pdf_simple(recibos_data)
         except Exception as e:
-            logger.warning(f"Error generando PDF con imágenes: {str(e)}. Intentando PDF simple...")
-            generator.generar_pdf_simple(recibos_data)
-        
+            logger.warning(f"Error generando PDF con formato {procesamiento.formato_salida}: {str(e)}. Intentando PDF simple...")
+            archivo_principal = PDFGenerator().generar_pdf_simple(recibos_data)
+
+        if not archivo_principal:
+            logger.info("No se obtuvo archivo principal, generando PDF simple por defecto")
+            archivo_principal = PDFGenerator().generar_pdf_simple(recibos_data)
+
+        if archivo_principal:
+            filename_base = f"recibos_separados_{procesamiento_id}.pdf"
+            procesamiento.archivo_resultado.save(
+                filename_base,
+                ContentFile(archivo_principal),
+                save=False,
+            )
+
+        if archivo_texto:
+            filename_texto = f"recibos_separados_texto_{procesamiento_id}.pdf"
+            procesamiento.archivo_resultado_texto.save(
+                filename_texto,
+                ContentFile(archivo_texto),
+                save=False,
+            )
+
+        if procesamiento.generar_reporte:
+            try:
+                logger.info("Generando reporte estadístico...")
+                reporte_bytes = PDFGenerator().generar_reporte_estadisticas(recibos_data)
+                procesamiento.archivo_reporte.save(
+                    f"reporte_recibos_{procesamiento_id}.pdf",
+                    ContentFile(reporte_bytes),
+                    save=False,
+                )
+            except Exception as e:
+                logger.warning(f"Error generando reporte estadístico: {str(e)}")
+
         # Actualizar procesamiento
-        procesamiento.archivo_resultado.name = output_path.replace("media/", "")
         procesamiento.total_recibos = len(recibos_detectados)
         procesamiento.estado = 'COMPLETADO'
         procesamiento.save()
@@ -160,7 +197,7 @@ def procesar_recibo_pdf(procesamiento_id, calidad_imagen='media'):
         return {
             'status': 'success',
             'recibos_encontrados': len(recibos_detectados),
-            'archivo_resultado': output_path
+            'archivo_resultado': procesamiento.archivo_resultado.name
         }
         
     except Exception as e:

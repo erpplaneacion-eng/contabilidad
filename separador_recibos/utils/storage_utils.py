@@ -47,15 +47,16 @@ class StorageHelper:
         temp_file = tempfile.NamedTemporaryFile(delete=False, suffix=ext)
 
         try:
-            # Leer contenido del archivo remoto
+            # Leer contenido del archivo remoto de forma incremental
             file_field.open('rb')
-            content = file_field.read()
-            file_field.close()
+            try:
+                for chunk in file_field.chunks():
+                    temp_file.write(chunk)
+            finally:
+                file_field.close()
 
-            # Escribir al archivo temporal
-            temp_file.write(content)
+            temp_file.flush()
             temp_file.close()
-
             logger.info(f"Archivo descargado temporalmente a: {temp_file.name}")
             return (temp_file.name, True)
 

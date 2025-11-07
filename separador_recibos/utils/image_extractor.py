@@ -17,7 +17,13 @@ class ImageExtractor:
     def __init__(self, pdf_path: str):
         self.pdf_path = pdf_path
     
-    def extraer_imagen_recibo(self, coordenadas: Dict, tamaño_imagen: str = 'mediana', calidad_imagen: str = 'media') -> Image.Image:
+    def extraer_imagen_recibo(
+        self,
+        coordenadas: Dict,
+        tamaño_imagen: str = 'mediana',
+        calidad_imagen: str = 'media',
+        doc=None,
+    ) -> Image.Image:
         """
         Extrae el pantallazo visual de cada recibo usando coordenadas
 
@@ -29,7 +35,11 @@ class ImageExtractor:
         try:
             logger.info(f"Extrayendo imagen de recibo - Coordenadas: {coordenadas}, Calidad: {calidad_imagen}, Tamaño: {tamaño_imagen}")
 
-            doc = fitz.open(self.pdf_path)
+            close_doc = False
+            if doc is None:
+                doc = fitz.open(self.pdf_path)
+                close_doc = True
+
             pagina_num = coordenadas['pagina'] - 1  # 0-indexed
 
             if pagina_num >= len(doc):
@@ -84,7 +94,8 @@ class ImageExtractor:
             # Redimensionar
             img = self._redimensionar_imagen(img, output_size)
 
-            doc.close()
+            if close_doc:
+                doc.close()
             return img
 
         except Exception as e:
@@ -125,6 +136,7 @@ class ImageExtractor:
         """
         logger.info(f"Procesando {len(recibos_detectados)} imágenes de recibos con calidad: {calidad_imagen}, tamaño: {tamaño_imagen}")
         imagenes_procesadas = []
+        doc = None
 
         # Determinar formato y calidad de guardado según calidad_imagen
         # PNG no tiene parámetro quality, es lossless
@@ -136,12 +148,23 @@ class ImageExtractor:
         }
         config = configuraciones_guardado.get(calidad_imagen.lower(), configuraciones_guardado['media'])
 
+        try:
+            doc = fitz.open(self.pdf_path)
+        except Exception as e:
+            logger.error(f"No se pudo abrir el PDF para extracción de imágenes: {str(e)}")
+            doc = None
+
         for i, recibo in enumerate(recibos_detectados):
             try:
                 logger.info(f"Procesando imagen del recibo {i + 1}")
 
                 # Extraer imagen con calidad y tamaño especificados
-                img = self.extraer_imagen_recibo(recibo, tamaño_imagen=tamaño_imagen, calidad_imagen=calidad_imagen)
+                img = self.extraer_imagen_recibo(
+                    recibo,
+                    tamaño_imagen=tamaño_imagen,
+                    calidad_imagen=calidad_imagen,
+                    doc=doc,
+                )
                 
                 # Preparar para guardar con formato y calidad ajustada
                 img_buffer = io.BytesIO()
@@ -187,6 +210,12 @@ class ImageExtractor:
                 img_info = self._crear_imagen_placeholder(i + 1, str(e))
                 imagenes_procesadas.append(img_info)
         
+        if doc is not None:
+            try:
+                doc.close()
+            except Exception as e:
+                logger.warning(f"No se pudo cerrar el PDF luego de la extracción de imágenes: {str(e)}")
+
         return imagenes_procesadas
     
     def _crear_imagen_placeholder(self, numero_recibo: int, mensaje_error: str) -> Dict:

@@ -3,15 +3,14 @@ Módulo para generación de PDF separado con cada recibo en página individual
 """
 from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import LETTER
-from reportlab.lib.units import inch, cm
-from reportlab.lib.colors import black, blue, green
+from reportlab.lib.units import inch
+from reportlab.lib.colors import black, green
 from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Image as RLImage, PageBreak
-from reportlab.lib.enums import TA_LEFT, TA_CENTER
+from reportlab.lib.enums import TA_CENTER
 import io
-import os
 import logging
-from typing import List, Dict, Tuple
+from typing import List, Dict
 from PIL import Image
 
 logger = logging.getLogger(__name__)
@@ -20,12 +19,12 @@ logger = logging.getLogger(__name__)
 class PDFGenerator:
     """Clase para generar PDF separado con cada recibo individual"""
     
-    def __init__(self, output_path: str):
+    def __init__(self, output_path: str | None = None):
         self.output_path = output_path
         self.width, self.height = LETTER  # Letter (Carta) tamaño: 612 x 792 puntos
         self.margin = 1 * inch
     
-    def generar_pdf_con_imagenes(self, recibos_data: List[Dict], imagenes_data: List[Dict]) -> str:
+    def generar_pdf_con_imagenes(self, recibos_data: List[Dict], imagenes_data: List[Dict]) -> bytes:
         """
         Genera PDF con cada recibo en su propia página individual usando las imágenes extraídas
         Cada página contiene: Título del recibo + Información + Imagen
@@ -33,9 +32,11 @@ class PDFGenerator:
         try:
             logger.info(f"Generando PDF con {len(recibos_data)} recibos (1 recibo por página)")
 
+            buffer = io.BytesIO()
+
             # Crear documento PDF
             doc = SimpleDocTemplate(
-                self.output_path,
+                buffer,
                 pagesize=LETTER,  # Letter (Carta) tamaño: 612 x 792 puntos
                 rightMargin=self.margin,
                 leftMargin=self.margin,
@@ -120,8 +121,16 @@ class PDFGenerator:
             # Construir PDF
             doc.build(story)
 
-            logger.info(f"PDF generado exitosamente en: {self.output_path}")
-            return self.output_path
+            pdf_bytes = buffer.getvalue()
+
+            if self.output_path:
+                with open(self.output_path, 'wb') as output_file:
+                    output_file.write(pdf_bytes)
+                logger.info(f"PDF generado exitosamente en: {self.output_path}")
+            else:
+                logger.info("PDF generado exitosamente en memoria")
+
+            return pdf_bytes
 
         except Exception as e:
             logger.error(f"Error generando PDF: {str(e)}")
@@ -135,14 +144,15 @@ class PDFGenerator:
             logger.error(f"Error creando imagen desde datos: {str(e)}")
             raise
     
-    def generar_pdf_simple(self, recibos_data: List[Dict]) -> str:
+    def generar_pdf_simple(self, recibos_data: List[Dict]) -> bytes:
         """
         Genera PDF simple sin imágenes (fallback)
         """
         try:
             logger.info("Generando PDF simple sin imágenes")
             
-            c = canvas.Canvas(self.output_path, pagesize=LETTER)  # Letter (Carta) tamaño: 612 x 792 puntos
+            buffer = io.BytesIO()
+            c = canvas.Canvas(buffer, pagesize=LETTER)  # Letter (Carta) tamaño: 612 x 792 puntos
             width, height = LETTER
             
             y_position = height - 50
@@ -189,16 +199,26 @@ class PDFGenerator:
                 y_position -= 20
             
             c.save()
-            
-            logger.info(f"PDF simple generado en: {self.output_path}")
-            return self.output_path
+            pdf_bytes = buffer.getvalue()
+
+            if self.output_path:
+                with open(self.output_path, 'wb') as output_file:
+                    output_file.write(pdf_bytes)
+                logger.info(f"PDF simple generado en: {self.output_path}")
+            else:
+                logger.info("PDF simple generado en memoria")
+
+            return pdf_bytes
             
         except Exception as e:
             logger.error(f"Error generando PDF simple: {str(e)}")
             raise
     
     def agregar_metadatos_pdf(self, metadatos: Dict):
-        """Agrega metadatos al PDF"""
+        """Agrega metadatos al PDF guardado en disco"""
+        if not self.output_path:
+            logger.warning("No se proporcionó output_path para agregar metadatos al PDF")
+            return
         try:
             c = canvas.Canvas(self.output_path)
             c.setTitle(metadatos.get('titulo', 'Recibos Separados'))
@@ -224,14 +244,13 @@ class PDFGenerator:
         except Exception as e:
             logger.error(f"Error agregando metadatos: {str(e)}")
     
-    def generar_reporte_estadisticas(self, recibos_data: List[Dict]) -> str:
+    def generar_reporte_estadisticas(self, recibos_data: List[Dict]) -> bytes:
         """
         Genera un reporte con estadísticas de los recibos
         """
         try:
-            stats_path = self.output_path.replace('.pdf', '_estadisticas.pdf')
-            
-            c = canvas.Canvas(stats_path, pagesize=LETTER)  # Letter (Carta) tamaño: 612 x 792 puntos
+            buffer = io.BytesIO()
+            c = canvas.Canvas(buffer, pagesize=LETTER)  # Letter (Carta) tamaño: 612 x 792 puntos
             width, height = LETTER
             
             # Título
@@ -274,9 +293,18 @@ class PDFGenerator:
                 y_position -= 15
             
             c.save()
-            
-            logger.info(f"Reporte de estadísticas generado: {stats_path}")
-            return stats_path
+
+            pdf_bytes = buffer.getvalue()
+
+            if self.output_path:
+                stats_path = self.output_path.replace('.pdf', '_estadisticas.pdf')
+                with open(stats_path, 'wb') as output_file:
+                    output_file.write(pdf_bytes)
+                logger.info(f"Reporte de estadísticas generado: {stats_path}")
+            else:
+                logger.info("Reporte de estadísticas generado en memoria")
+
+            return pdf_bytes
             
         except Exception as e:
             logger.error(f"Error generando reporte: {str(e)}")

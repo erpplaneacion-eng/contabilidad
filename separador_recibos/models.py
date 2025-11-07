@@ -22,6 +22,7 @@ class ProcesamientoRecibo(models.Model):
     )
     total_recibos = models.PositiveIntegerField(default=0)
     archivo_resultado = models.FileField(upload_to='pdfs_procesados/', null=True, blank=True)
+    archivo_resultado_texto = models.FileField(upload_to='pdfs_procesados/', null=True, blank=True)
     mensaje_error = models.TextField(blank=True, null=True)
 
     # Configuración de procesamiento (valores fijos de alta calidad)

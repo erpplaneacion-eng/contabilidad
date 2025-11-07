@@ -8,6 +8,7 @@ from django.core.paginator import Paginator
 from django.db.models import Q, Sum, Count
 from django.utils import timezone
 from django.core.files.base import ContentFile
+import threading
 import os
 import io
 import logging
@@ -124,10 +125,6 @@ def procesar_recibo_sincrono(procesamiento_id):
 
         # Paso 4: Generar PDF separado según formato_salida
         logger.info(f"Generando PDF separado con formato: {formato_salida}...")
-        output_path = f"media/pdfs_procesados/recibos_separados_{procesamiento_id}.pdf"
-
-        # Asegurar que el directorio existe
-        os.makedirs(os.path.dirname(output_path), exist_ok=True)
 
         # Obtener datos de recibos para el generador
         recibos_db = ReciboDetectado.objects.filter(procesamiento=procesamiento)
@@ -168,37 +165,59 @@ def procesar_recibo_sincrono(procesamiento_id):
 
             imagenes_generadas.append(imagen_data)
 
-        # Generar PDF según formato especificado
-        generator = PDFGenerator(output_path)
+        generator = PDFGenerator()
+        archivo_principal = None
+        archivo_texto = None
+
         try:
             if formato_salida == 'pdf_imagenes':
-                generator.generar_pdf_con_imagenes(recibos_data, imagenes_generadas)
+                archivo_principal = generator.generar_pdf_con_imagenes(recibos_data, imagenes_generadas)
             elif formato_salida == 'pdf_texto':
-                generator.generar_pdf_simple(recibos_data)
+                archivo_principal = generator.generar_pdf_simple(recibos_data)
             elif formato_salida == 'ambos':
-                # Generar ambos formatos
-                generator.generar_pdf_con_imagenes(recibos_data, imagenes_generadas)
-                # Generar PDF de texto con sufijo
-                output_path_texto = f"media/pdfs_procesados/recibos_separados_texto_{procesamiento_id}.pdf"
-                generator_texto = PDFGenerator(output_path_texto)
-                generator_texto.generar_pdf_simple(recibos_data)
-                logger.info(f"PDF de texto generado: {output_path_texto}")
+                archivo_principal = generator.generar_pdf_con_imagenes(recibos_data, imagenes_generadas)
+                generator_texto = PDFGenerator()
+                archivo_texto = generator_texto.generar_pdf_simple(recibos_data)
         except Exception as e:
             logger.warning(f"Error generando PDF con formato {formato_salida}: {str(e)}. Intentando PDF simple...")
-            generator.generar_pdf_simple(recibos_data)
+            archivo_principal = PDFGenerator().generar_pdf_simple(recibos_data)
+
+        if not archivo_principal:
+            logger.info("No se obtuvo archivo principal, generando PDF simple por defecto")
+            archivo_principal = PDFGenerator().generar_pdf_simple(recibos_data)
+
+        if archivo_principal:
+            filename_base = f"recibos_separados_{procesamiento_id}"
+            procesamiento.archivo_resultado.save(
+                f"{filename_base}.pdf",
+                ContentFile(archivo_principal),
+                save=False,
+            )
+
+        if archivo_texto:
+            filename_base = f"recibos_separados_texto_{procesamiento_id}"
+            procesamiento.archivo_resultado_texto.save(
+                f"{filename_base}.pdf",
+                ContentFile(archivo_texto),
+                save=False,
+            )
 
         # Paso 5: Generar reporte estadístico (si está habilitado)
         if generar_reporte:
             try:
                 logger.info("Generando reporte estadístico...")
-                reporte_path = generator.generar_reporte_estadisticas(recibos_data)
-                procesamiento.archivo_reporte.name = reporte_path.replace("media/", "")
-                logger.info(f"Reporte generado: {reporte_path}")
+                generator_reporte = PDFGenerator()
+                reporte_bytes = generator_reporte.generar_reporte_estadisticas(recibos_data)
+                procesamiento.archivo_reporte.save(
+                    f"reporte_recibos_{procesamiento_id}.pdf",
+                    ContentFile(reporte_bytes),
+                    save=False,
+                )
+                logger.info("Reporte generado y almacenado correctamente")
             except Exception as e:
                 logger.warning(f"Error generando reporte: {str(e)}")
 
         # Actualizar procesamiento
-        procesamiento.archivo_resultado.name = output_path.replace("media/", "")
         procesamiento.total_recibos = len(recibos_detectados)
         procesamiento.estado = 'COMPLETADO'
         procesamiento.save()
@@ -222,6 +241,17 @@ def procesar_recibo_sincrono(procesamiento_id):
         raise
 
 
+def iniciar_procesamiento_async(procesamiento_id):
+    """Ejecuta el procesamiento en un hilo en segundo plano."""
+    thread = threading.Thread(
+        target=procesar_recibo_sincrono,
+        args=(procesamiento_id,),
+        daemon=True,
+    )
+    thread.start()
+    return thread
+
+
 @login_required
 def upload_pdf(request):
     """Vista para subir archivo PDF (procesamiento automático con alta calidad)"""
@@ -241,11 +271,11 @@ def upload_pdf(request):
                 # Procesar de forma síncrona (sin Celery/Redis)
                 # Para usar procesamiento asíncrono, reemplazar con: procesar_recibo_pdf.delay(procesamiento.id)
                 try:
-                    procesar_recibo_sincrono(procesamiento.id)
-                    logger.info(f"Procesamiento completado exitosamente")
+                    iniciar_procesamiento_async(procesamiento.id)
+                    logger.info(f"Procesamiento disparado en segundo plano para {procesamiento.id}")
                 except Exception as e:
-                    logger.error(f"Error en procesamiento: {str(e)}")
-                    # El error ya fue guardado en la base de datos por procesar_recibo_sincrono
+                    logger.error(f"Error iniciando procesamiento asíncrono: {str(e)}")
+                    procesar_recibo_sincrono(procesamiento.id)
 
                 return redirect('separador_recibos:process_status', procesamiento_id=procesamiento.id)
 
@@ -322,14 +352,25 @@ def download_result(request, procesamiento_id):
         usuario=request.user
     )
     
-    if not procesamiento.archivo_resultado:
+    formato = request.GET.get('formato', 'imagenes')
+    archivo = (
+        procesamiento.archivo_resultado_texto
+        if formato == 'texto'
+        else procesamiento.archivo_resultado
+    )
+
+    if not archivo:
         return HttpResponse("Archivo no disponible", status=404)
     
     try:
         response = FileResponse(
-            procesamiento.archivo_resultado.open('rb'),
+            archivo.open('rb'),
             as_attachment=True,
-            filename=f'recibos_separados_{procesamiento.id}.pdf'
+            filename=(
+                f'recibos_separados_texto_{procesamiento.id}.pdf'
+                if formato == 'texto'
+                else f'recibos_separados_{procesamiento.id}.pdf'
+            )
         )
         return response
     except Exception as e:
