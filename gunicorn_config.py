@@ -32,8 +32,10 @@ accesslog = '-'  # Log a stdout
 errorlog = '-'   # Log a stderr
 loglevel = 'info'
 
-# Preload de la aplicación (mejora el uso de memoria)
-preload_app = True
+# Preload de la aplicación
+# DESACTIVADO porque puede causar problemas con threading en workers
+# Si necesitas activarlo por memoria, considera usar Celery en su lugar
+preload_app = False
 
 # Número máximo de requests por worker antes de reiniciarlo
 # Esto ayuda a liberar memoria

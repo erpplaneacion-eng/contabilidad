@@ -108,12 +108,88 @@ def dashboard_principal(request):
 
     return render(request, 'dashboard/main.html', context)
 
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponse
+from django.conf import settings
+from django.views.decorators.csrf import csrf_exempt
 from .models import Municipio
+import logging
+
+logger = logging.getLogger(__name__)
 
 def get_municipios(request, departamento_id):
     """Devuelve una lista de municipios para un departamento dado en formato JSON."""
     municipios = Municipio.objects.filter(departamento_id=departamento_id).order_by('nombre_municipio')
     data = list(municipios.values('id', 'nombre_municipio'))
     return JsonResponse(data, safe=False)
+
+
+@csrf_exempt
+def test_email_production(request):
+    """
+    Endpoint de diagnóstico para probar configuración de email en producción.
+    URL: /test-email/
+
+    Este endpoint muestra:
+    1. Si las variables de entorno están configuradas
+    2. Intenta enviar un correo de prueba
+    3. Muestra errores detallados
+
+    IMPORTANTE: Este endpoint debe ser ELIMINADO en producción final por seguridad.
+    """
+    from django.core.mail import send_mail
+
+    resultado = {
+        'servidor': 'Railway' if not settings.DEBUG else 'Local',
+        'debug_mode': settings.DEBUG,
+    }
+
+    # 1. Verificar variables de entorno
+    resultado['configuracion'] = {
+        'EMAIL_BACKEND': settings.EMAIL_BACKEND,
+        'EMAIL_HOST': settings.EMAIL_HOST,
+        'EMAIL_PORT': settings.EMAIL_PORT,
+        'EMAIL_USE_TLS': settings.EMAIL_USE_TLS,
+        'EMAIL_HOST_USER_configurado': bool(settings.EMAIL_HOST_USER),
+        'EMAIL_HOST_USER': settings.EMAIL_HOST_USER if settings.EMAIL_HOST_USER else '❌ NO CONFIGURADO',
+        'EMAIL_HOST_PASSWORD_configurado': bool(settings.EMAIL_HOST_PASSWORD),
+        'EMAIL_HOST_PASSWORD': f"***{settings.EMAIL_HOST_PASSWORD[-4:]}" if settings.EMAIL_HOST_PASSWORD else '❌ NO CONFIGURADO',
+        'DEFAULT_FROM_EMAIL': settings.DEFAULT_FROM_EMAIL,
+        'NOTIFICATION_EMAIL': settings.NOTIFICATION_EMAIL,
+    }
+
+    # 2. Verificar si la configuración es válida
+    if not settings.EMAIL_HOST_USER or not settings.EMAIL_HOST_PASSWORD:
+        resultado['error'] = 'Variables de email NO configuradas en Railway'
+        resultado['solucion'] = 'Agrega EMAIL_HOST_USER y EMAIL_HOST_PASSWORD en Railway Variables'
+        return JsonResponse(resultado, status=500)
+
+    # 3. Intentar enviar correo de prueba (solo si se envía parámetro send=true)
+    if request.GET.get('send') == 'true':
+        try:
+            resultado['enviando'] = f"Intentando enviar a {settings.NOTIFICATION_EMAIL}..."
+
+            num_enviados = send_mail(
+                subject='🧪 Test desde Railway - Sistema Contabilidad',
+                message='Este es un correo de prueba desde el servidor de producción.',
+                from_email=settings.DEFAULT_FROM_EMAIL,
+                recipient_list=[settings.NOTIFICATION_EMAIL],
+                fail_silently=False,
+            )
+
+            if num_enviados > 0:
+                resultado['exito'] = True
+                resultado['mensaje'] = '✅ Correo enviado exitosamente desde Railway'
+            else:
+                resultado['exito'] = False
+                resultado['mensaje'] = '❌ send_mail retornó 0'
+
+        except Exception as e:
+            resultado['exito'] = False
+            resultado['error'] = str(e)
+            resultado['tipo_error'] = type(e).__name__
+            logger.error(f"Error en test_email_production: {str(e)}")
+    else:
+        resultado['info'] = 'Para enviar correo de prueba, agrega ?send=true a la URL'
+
+    return JsonResponse(resultado, json_dumps_params={'indent': 2})
 
