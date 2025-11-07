@@ -13,27 +13,27 @@
                 <div class="card-body">
                     <form method="post" enctype="multipart/form-data" id="uploadForm">
                         {% csrf_token %}
-                        
+
                         {% if form.non_field_errors %}
                         <div class="alert alert-danger">
                             {{ form.non_field_errors }}
                         </div>
                         {% endif %}
-                        
+
                         <div class="mb-3">
                             <label for="id_archivo_original" class="form-label">
                                 <i class="fas fa-file-pdf"></i> Archivo PDF
                             </label>
                             <div class="file-upload-wrapper">
-                                <input type="file" 
-                                       name="archivo_original" 
-                                       accept=".pdf" 
-                                       required 
+                                <input type="file"
+                                       name="archivo_original"
+                                       accept=".pdf"
+                                       required
                                        id="id_archivo_original"
                                        class="form-control"
                                        style="display: none;">
-                                
-                                <div class="border rounded p-4 text-center" 
+
+                                <div class="border rounded p-4 text-center"
                                      onclick="document.getElementById('id_archivo_original').click()"
                                      style="cursor: pointer; border: 2px dashed #007bff !important;">
                                     <div id="filePreview" style="display: none;">
@@ -41,7 +41,7 @@
                                         <div id="fileName" class="fw-bold"></div>
                                         <div id="fileSize" class="text-muted"></div>
                                     </div>
-                                    
+
                                     <div id="fileUploadArea">
                                         <i class="fas fa-cloud-upload-alt fa-3x text-primary mb-3"></i>
                                         <p class="mb-2">Haz clic aquí para seleccionar un archivo PDF</p>
@@ -54,13 +54,13 @@
                                     </div>
                                 </div>
                             </div>
-                            
+
                             {% if form.archivo_original.errors %}
                             <div class="text-danger mt-2">
                                 {{ form.archivo_original.errors }}
                             </div>
                             {% endif %}
-                            
+
                             {% if form.archivo_original.help_text %}
                             <div class="form-text mt-2">
                                 {{ form.archivo_original.help_text }}
@@ -85,10 +85,20 @@
         </div>
     </div>
 </div>
+
+<!-- Overlay de procesamiento -->
+<div id="processingOverlay">
+    <div class="processing-content">
+        <div class="spinner-border spinner-border-lg text-primary mb-3" role="status">
+            <span class="visually-hidden">Procesando...</span>
+        </div>
+        <h5>Procesando PDF</h5>
+        <p class="mb-0">Por favor espere mientras procesamos su archivo...</p>
+    </div>
+</div>
 {% endblock %}
 
-{% block extra_js %}
-{{ block.super }}
+{% block extra_css %}
 <style>
 .file-upload-wrapper:hover .border {
     background-color: #f8f9fa;
@@ -119,18 +129,10 @@
     height: 3rem;
 }
 </style>
+{% endblock %}
 
-<!-- Overlay de procesamiento -->
-<div id="processingOverlay">
-    <div class="processing-content">
-        <div class="spinner-border spinner-border-lg text-primary mb-3" role="status">
-            <span class="visually-hidden">Procesando...</span>
-        </div>
-        <h5>Procesando PDF</h5>
-        <p class="mb-0">Por favor espere mientras procesamos su archivo...</p>
-    </div>
-</div>
-
+{% block extra_js %}
+{{ block.super }}
 <script>
 $(document).ready(function() {
     // Manejo de selección de archivo
