@@ -20,7 +20,7 @@ from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
 from django.views.generic import RedirectView
-from core.views import test_email_production
+from core.views import test_email_production, test_gmail_api
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -38,8 +38,9 @@ urlpatterns = [
     # URLs del Separador de Recibos PDF
     path('separador/', include('separador_recibos.urls')),
 
-    # Endpoint de diagnóstico de email (TEMPORAL - Eliminar después de verificar)
+    # Endpoints de diagnóstico de email (TEMPORAL - Eliminar después de verificar)
     path('test-email/', test_email_production, name='test_email_production'),
+    path('test-gmail-api/', test_gmail_api, name='test_gmail_api'),
 
     # Redirigir la raíz al login
     path('', RedirectView.as_view(url='/login/', permanent=False)),

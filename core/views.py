@@ -193,3 +193,71 @@ def test_email_production(request):
 
     return JsonResponse(resultado, json_dumps_params={'indent': 2})
 
+
+def test_gmail_api(request):
+    """
+    Endpoint de diagnóstico específico para Gmail API.
+    URL: /test-gmail-api/
+
+    Usa la función enviar_con_gmail_api() que es 10x más rápida que SMTP
+    y evita el problema de WORKER TIMEOUT.
+    """
+    from core.utils import enviar_con_gmail_api
+    from django.http import JsonResponse
+    from django.conf import settings
+    import os
+    import json
+
+    resultado = {
+        'servidor': 'Railway' if not settings.DEBUG else 'Local',
+        'debug_mode': settings.DEBUG,
+        'metodo': 'Gmail API',
+    }
+
+    # Verificar si GMAIL_TOKEN_JSON está configurado
+    gmail_token_json = os.getenv('GMAIL_TOKEN_JSON')
+    resultado['gmail_token_configurado'] = bool(gmail_token_json)
+
+    if gmail_token_json:
+        try:
+            token_data = json.loads(gmail_token_json)
+            resultado['client_id'] = token_data.get('client_id', '')[:30] + '...'
+            resultado['tiene_refresh_token'] = bool(token_data.get('refresh_token'))
+            resultado['expiry'] = token_data.get('expiry', '')
+            resultado['scopes'] = token_data.get('scopes', [])
+        except Exception as e:
+            resultado['error_parsing_token'] = str(e)
+    else:
+        resultado['advertencia'] = 'GMAIL_TOKEN_JSON no configurado - se usará SMTP como fallback'
+
+    # Intentar enviar correo si se pide
+    if request.GET.get('send') == 'true':
+        try:
+            resultado['enviando'] = f"Usando Gmail API para enviar a {settings.NOTIFICATION_EMAIL}..."
+
+            exito = enviar_con_gmail_api(
+                asunto='✅ Test Gmail API - Sistema Contabilidad CHVS',
+                mensaje_html='<h2>Test desde Railway</h2><p>Gmail API funcionando correctamente.</p><p>Token OAuth renovado exitosamente.</p>',
+                mensaje_texto='Test desde Railway - Gmail API funcionando correctamente. Token OAuth renovado.',
+                destinatarios=[settings.NOTIFICATION_EMAIL]
+            )
+
+            if exito:
+                resultado['exito'] = True
+                resultado['mensaje'] = '✅ Correo enviado con Gmail API exitosamente'
+                resultado['destinatario'] = settings.NOTIFICATION_EMAIL
+            else:
+                resultado['exito'] = False
+                resultado['mensaje'] = '❌ Gmail API retornó False (probablemente cayó al fallback SMTP)'
+
+        except Exception as e:
+            resultado['exito'] = False
+            resultado['error'] = str(e)
+            resultado['tipo_error'] = type(e).__name__
+            logger.error(f"Error en test_gmail_api: {str(e)}")
+    else:
+        resultado['info'] = 'Para enviar correo de prueba con Gmail API, agrega ?send=true a la URL'
+        resultado['ejemplo'] = f'{request.build_absolute_uri()}?send=true'
+
+    return JsonResponse(resultado, json_dumps_params={'indent': 2})
+
