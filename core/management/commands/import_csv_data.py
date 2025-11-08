@@ -1,14 +1,20 @@
 
 import csv
 from django.core.management.base import BaseCommand
+from django.conf import settings
+import os
 from core.models import Departamento, Municipio
 
 class Command(BaseCommand):
     help = 'Import data from departamentos.csv and municipio.csv files'
 
     def handle(self, *args, **options):
+        # Construct absolute paths to CSV files
+        departamentos_csv_path = os.path.join(settings.BASE_DIR, 'archivois_excel', 'departamentos.csv')
+        municipios_csv_path = os.path.join(settings.BASE_DIR, 'archivois_excel', 'municipio.csv')
+
         # Import Departamentos
-        with open('archivois_excel/departamentos.csv', 'r', encoding='utf-8') as f:
+        with open(departamentos_csv_path, 'r', encoding='utf-8') as f:
             reader = csv.reader(f)
             next(reader)  # Skip header
             for row in reader:
@@ -22,7 +28,7 @@ class Command(BaseCommand):
             self.stdout.write(self.style.SUCCESS('Successfully imported Departamentos'))
 
         # Import Municipios
-        with open('archivois_excel/municipio.csv', 'r', encoding='-utf8') as f:
+        with open(municipios_csv_path, 'r', encoding='utf-8') as f:
             reader = csv.reader(f)
             next(reader)  # Skip header
             for row in reader:

@@ -54,6 +54,13 @@ Thumbs.db
 .env
 .env.local
 .env.*.local
+.env.railway
+.env.testing
+.env.production
+
+# Documentation with credentials (keep templates only)
+INSTRUCCIONES_RAILWAY_CREDENCIALES.md
+.env.railway.backup
 
 # Temporary files
 *.bak
