@@ -163,39 +163,41 @@ def test_email_production(request):
         resultado['solucion'] = 'Agrega EMAIL_HOST_USER y EMAIL_HOST_PASSWORD en Railway Variables'
         return JsonResponse(resultado, status=500)
 
-    # 3. Intentar enviar correo de prueba (solo si se envía parámetro send=true)
+    # 3. Intentar enviar correo de prueba usando Gmail API (solo si se envía parámetro send=true)
     if request.GET.get('send') == 'true':
-        resultado['advertencia'] = '⚠️ ENVÍO DE CORREOS DESHABILITADO TEMPORALMENTE EN PRODUCCIÓN'
-        resultado['razon'] = 'Los correos causan WORKER TIMEOUT en Railway (>30 segundos)'
-        resultado['solucion'] = 'Configurar sistema de colas (Celery + Redis) o usar webhooks/API asíncrona'
+        from core.utils import enviar_correo_notificacion
 
-        # Solo permitir envío en DEBUG mode (desarrollo local)
-        if settings.DEBUG:
-            try:
-                resultado['enviando'] = f"Intentando enviar a {settings.NOTIFICATION_EMAIL}..."
+        try:
+            resultado['enviando'] = f"Enviando correo vía Gmail API a {settings.NOTIFICATION_EMAIL}..."
+            resultado['metodo'] = 'Gmail API (rápido, 2-3 segundos)'
 
-                num_enviados = send_mail(
-                    subject='🧪 Test desde Local - Sistema Contabilidad',
-                    message='Este es un correo de prueba desde el servidor de desarrollo.',
-                    from_email=settings.DEFAULT_FROM_EMAIL,
-                    recipient_list=[settings.NOTIFICATION_EMAIL],
-                    fail_silently=False,
-                )
+            exito = enviar_correo_notificacion(
+                asunto='✅ Test desde Railway - Sistema Contabilidad CHVS',
+                mensaje='Este es un correo de prueba enviado vía Gmail API desde Railway.',
+                html_mensaje='<h2>✅ Test desde Railway</h2><p>Este correo fue enviado exitosamente usando <strong>Gmail API</strong>.</p><p>Sistema funcionando correctamente.</p>',
+                destinatarios=[settings.NOTIFICATION_EMAIL],
+                fail_silently=False
+            )
 
-                if num_enviados > 0:
-                    resultado['exito'] = True
-                    resultado['mensaje'] = '✅ Correo enviado exitosamente desde desarrollo'
-                else:
-                    resultado['exito'] = False
-                    resultado['mensaje'] = '❌ send_mail retornó 0'
-
-            except Exception as e:
+            if exito:
+                resultado['exito'] = True
+                resultado['mensaje'] = '✅ Correo enviado exitosamente vía Gmail API'
+                resultado['destinatario'] = settings.NOTIFICATION_EMAIL
+                resultado['tiempo_estimado'] = '2-3 segundos'
+            else:
                 resultado['exito'] = False
-                resultado['error'] = str(e)
-                resultado['tipo_error'] = type(e).__name__
-                logger.error(f"Error en test_email_production: {str(e)}")
+                resultado['mensaje'] = '❌ Gmail API falló. Verifica configuración de GMAIL_TOKEN_JSON'
+                resultado['solucion'] = 'Ejecuta: python manage.py authorize_gmail y configura GMAIL_TOKEN_JSON en Railway'
+
+        except Exception as e:
+            resultado['exito'] = False
+            resultado['error'] = str(e)
+            resultado['tipo_error'] = type(e).__name__
+            resultado['solucion'] = 'Verifica que GMAIL_TOKEN_JSON esté configurado en Railway Variables'
+            logger.error(f"Error en test_email_production: {str(e)}")
     else:
-        resultado['info'] = 'Para enviar correo de prueba, agrega ?send=true a la URL'
+        resultado['info'] = 'Para enviar correo de prueba con Gmail API, agrega ?send=true a la URL'
+        resultado['ejemplo'] = f'{request.build_absolute_uri()}?send=true'
 
     return JsonResponse(resultado, json_dumps_params={'indent': 2})
 

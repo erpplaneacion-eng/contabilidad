@@ -118,7 +118,7 @@ def enviar_correo_notificacion(
     timeout=30
 ):
     """
-    Envía un correo de notificación.
+    Envía un correo de notificación usando Gmail API EXCLUSIVAMENTE.
 
     Args:
         asunto (str): Asunto del correo
@@ -160,9 +160,9 @@ def enviar_correo_notificacion(
         if destinatarios is None:
             destinatarios = [settings.NOTIFICATION_EMAIL]
 
-        # INTENTO 1: Intentar Gmail API primero (MÁS RÁPIDO - mismo método que GESTION_HUMANA)
+        # USAR GMAIL API EXCLUSIVAMENTE (rápido, 2-3 segundos)
         if archivo_adjunto is None:  # Gmail API solo si no hay adjuntos
-            logger.info("Intentando enviar vía Gmail API (método rápido)...")
+            logger.info("Enviando correo vía Gmail API...")
             api_exitoso = enviar_con_gmail_api(
                 asunto=asunto,
                 mensaje_html=html_mensaje,
@@ -174,39 +174,23 @@ def enviar_correo_notificacion(
                 logger.info("✅ Correo enviado exitosamente vía Gmail API")
                 return True
             else:
-                logger.warning("Gmail API no disponible o falló, intentando con SMTP...")
-
-        # INTENTO 2: SMTP como fallback (si Gmail API no está disponible o tiene adjuntos)
-        # Verificar configuración de SMTP
-        if not settings.EMAIL_HOST_USER or not settings.EMAIL_HOST_PASSWORD:
-            logger.error("Configuración de SMTP incompleta. Verifique EMAIL_HOST_USER y EMAIL_HOST_PASSWORD.")
-            logger.error(f"EMAIL_HOST_USER configurado: {'Sí' if settings.EMAIL_HOST_USER else 'No'}")
-            logger.error(f"EMAIL_HOST_PASSWORD configurado: {'Sí' if settings.EMAIL_HOST_PASSWORD else 'No'}")
-            return False
-
-        # Si no hay archivo adjunto, usar send_mail simple
-        if archivo_adjunto is None:
-            logger.info(f"Intentando enviar correo vía SMTP a {', '.join(destinatarios)}")
-
-            resultado = send_mail(
-                subject=asunto,
-                message=mensaje,
-                from_email=settings.DEFAULT_FROM_EMAIL,
-                recipient_list=destinatarios,
-                html_message=html_mensaje,
-                fail_silently=fail_silently,
-            )
-
-            if resultado > 0:
-                logger.info(f"Correo enviado exitosamente vía SMTP a {', '.join(destinatarios)}")
-                return True
-            else:
-                logger.warning(f"No se pudo enviar el correo a {', '.join(destinatarios)}")
-                logger.warning(f"send_mail() retornó: {resultado}")
+                logger.error("❌ Gmail API falló. Verifica que GMAIL_TOKEN_JSON esté configurado en Railway.")
+                logger.error("Para configurar: python manage.py authorize_gmail y copiar token.json a Railway")
+                if not fail_silently:
+                    raise Exception("Gmail API no disponible. Configure GMAIL_TOKEN_JSON en Railway.")
                 return False
 
-        # Si hay archivo adjunto, usar EmailMessage
+        # Si hay archivo adjunto, usar EmailMessage con SMTP (Gmail API no soporta adjuntos fácilmente)
         else:
+            logger.warning("Archivo adjunto detectado. Usando SMTP como fallback (Gmail API no soporta adjuntos).")
+
+            # Verificar configuración de SMTP
+            if not settings.EMAIL_HOST_USER or not settings.EMAIL_HOST_PASSWORD:
+                logger.error("Configuración de SMTP incompleta para adjuntos. Verifique EMAIL_HOST_USER y EMAIL_HOST_PASSWORD.")
+                if not fail_silently:
+                    raise Exception("SMTP no configurado para enviar adjuntos.")
+                return False
+
             email = EmailMessage(
                 subject=asunto,
                 body=html_mensaje if html_mensaje else mensaje,
@@ -224,7 +208,7 @@ def enviar_correo_notificacion(
 
             # Enviar
             email.send(fail_silently=fail_silently)
-            logger.info(f"Correo con adjunto enviado exitosamente a {', '.join(destinatarios)}")
+            logger.info(f"Correo con adjunto enviado exitosamente vía SMTP a {', '.join(destinatarios)}")
             return True
 
     except Exception as e:
