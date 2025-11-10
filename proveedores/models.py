@@ -179,7 +179,7 @@ class Impuesto(models.Model):
         verbose_name='Porcentaje'
     )
     codigo_actividad_economica = models.CharField(
-        max_length=10,
+        max_length=20,
         blank=True,
         null=True,
         verbose_name='Código Actividad Económica (CIIU)'
