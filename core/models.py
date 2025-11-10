@@ -134,7 +134,7 @@ class Departamento(models.Model):
 
 class Municipio(models.Model):
     """Modelo para los municipios de un departamento."""
-    codigo_municipio = models.CharField(max_length=10, unique=True, verbose_name='Código del Municipio')
+    codigo_municipio = models.CharField(max_length=10, verbose_name='Código del Municipio')
     nombre_municipio = models.CharField(max_length=100, verbose_name='Nombre del Municipio')
     departamento = models.ForeignKey(
         Departamento, 
