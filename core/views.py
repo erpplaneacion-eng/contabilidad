@@ -165,29 +165,35 @@ def test_email_production(request):
 
     # 3. Intentar enviar correo de prueba (solo si se envía parámetro send=true)
     if request.GET.get('send') == 'true':
-        try:
-            resultado['enviando'] = f"Intentando enviar a {settings.NOTIFICATION_EMAIL}..."
+        resultado['advertencia'] = '⚠️ ENVÍO DE CORREOS DESHABILITADO TEMPORALMENTE EN PRODUCCIÓN'
+        resultado['razon'] = 'Los correos causan WORKER TIMEOUT en Railway (>30 segundos)'
+        resultado['solucion'] = 'Configurar sistema de colas (Celery + Redis) o usar webhooks/API asíncrona'
 
-            num_enviados = send_mail(
-                subject='🧪 Test desde Railway - Sistema Contabilidad',
-                message='Este es un correo de prueba desde el servidor de producción.',
-                from_email=settings.DEFAULT_FROM_EMAIL,
-                recipient_list=[settings.NOTIFICATION_EMAIL],
-                fail_silently=False,
-            )
+        # Solo permitir envío en DEBUG mode (desarrollo local)
+        if settings.DEBUG:
+            try:
+                resultado['enviando'] = f"Intentando enviar a {settings.NOTIFICATION_EMAIL}..."
 
-            if num_enviados > 0:
-                resultado['exito'] = True
-                resultado['mensaje'] = '✅ Correo enviado exitosamente desde Railway'
-            else:
+                num_enviados = send_mail(
+                    subject='🧪 Test desde Local - Sistema Contabilidad',
+                    message='Este es un correo de prueba desde el servidor de desarrollo.',
+                    from_email=settings.DEFAULT_FROM_EMAIL,
+                    recipient_list=[settings.NOTIFICATION_EMAIL],
+                    fail_silently=False,
+                )
+
+                if num_enviados > 0:
+                    resultado['exito'] = True
+                    resultado['mensaje'] = '✅ Correo enviado exitosamente desde desarrollo'
+                else:
+                    resultado['exito'] = False
+                    resultado['mensaje'] = '❌ send_mail retornó 0'
+
+            except Exception as e:
                 resultado['exito'] = False
-                resultado['mensaje'] = '❌ send_mail retornó 0'
-
-        except Exception as e:
-            resultado['exito'] = False
-            resultado['error'] = str(e)
-            resultado['tipo_error'] = type(e).__name__
-            logger.error(f"Error en test_email_production: {str(e)}")
+                resultado['error'] = str(e)
+                resultado['tipo_error'] = type(e).__name__
+                logger.error(f"Error en test_email_production: {str(e)}")
     else:
         resultado['info'] = 'Para enviar correo de prueba, agrega ?send=true a la URL'
 

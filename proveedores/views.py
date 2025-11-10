@@ -7,6 +7,7 @@ from django.views.generic import ListView, DetailView
 from django.urls import reverse_lazy, reverse
 from django.http import JsonResponse
 from django.core.files.base import ContentFile
+from django.conf import settings
 import base64
 import re
 import threading
@@ -93,22 +94,26 @@ def proveedor_form_view(request):
                     documento.proveedor = proveedor
                     documento.save()
 
+                    # TEMPORAL: Notificaciones por correo deshabilitadas en producción para evitar timeouts
                     # Enviar notificación por correo en un hilo separado (no bloqueante)
-                    try:
-                        url_proveedor = request.build_absolute_uri(
-                            reverse('proveedores:detalle', args=[proveedor.pk])
-                        )
-                        # Iniciar thread para enviar correo sin bloquear la respuesta
-                        thread = threading.Thread(
-                            target=enviar_notificacion_async,
-                            args=(proveedor.pk, url_proveedor),
-                            daemon=True
-                        )
-                        thread.start()
-                        logger.info(f'Thread de notificación iniciado para proveedor {proveedor.pk}')
-                    except Exception as e:
-                        # Si falla al iniciar el thread, solo registrar el error
-                        logger.error(f'Error al iniciar thread de notificación: {str(e)}')
+                    if settings.DEBUG:
+                        try:
+                            url_proveedor = request.build_absolute_uri(
+                                reverse('proveedores:detalle', args=[proveedor.pk])
+                            )
+                            # Iniciar thread para enviar correo sin bloquear la respuesta
+                            thread = threading.Thread(
+                                target=enviar_notificacion_async,
+                                args=(proveedor.pk, url_proveedor),
+                                daemon=True
+                            )
+                            thread.start()
+                            logger.info(f'Thread de notificación iniciado para proveedor {proveedor.pk}')
+                        except Exception as e:
+                            # Si falla al iniciar el thread, solo registrar el error
+                            logger.error(f'Error al iniciar thread de notificación: {str(e)}')
+                    else:
+                        logger.info(f'Notificaciones por correo deshabilitadas en producción. Proveedor {proveedor.pk} registrado correctamente.')
 
                     messages.success(request, f'¡Registro exitoso! El proveedor {proveedor.nombre_razon_social} ha sido registrado.')
                     return redirect('proveedores:success', pk=proveedor.pk)
