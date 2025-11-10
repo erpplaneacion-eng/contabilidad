@@ -12,9 +12,6 @@ import json
 import base64
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
-from google.oauth2.credentials import Credentials
-from google.auth.transport.requests import Request
-from googleapiclient.discovery import build
 
 logger = logging.getLogger(__name__)
 
@@ -30,6 +27,11 @@ def enviar_con_gmail_api(asunto, mensaje_html, mensaje_texto, destinatarios):
     Returns:
         bool: True si se envió exitosamente, False si falló
     """
+    # Import lazy para evitar timeout en inicio de Django
+    from google.oauth2.credentials import Credentials
+    from google.auth.transport.requests import Request
+    from googleapiclient.discovery import build
+
     try:
         # Cargar credenciales: primero de variable de entorno (Railway) o archivo (desarrollo local)
         token_data = None
