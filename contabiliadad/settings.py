@@ -89,31 +89,18 @@ WSGI_APPLICATION = 'contabiliadad.wsgi.application'
 DATABASE_URL = config('DATABASE_URL', default=None)
 
 if DATABASE_URL:
-    # Producción: usa PostgreSQL desde DATABASE_URL
+    # Producción (Railway): usa PostgreSQL desde DATABASE_URL
     DATABASES = {
         'default': dj_database_url.parse(DATABASE_URL, conn_max_age=600)
     }
 else:
-    # Desarrollo: usa SQLite
-    import dj_database_url
-    from decouple import config
-    
-    # Database
-    # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
-    
+    # Desarrollo (Local): usa SQLite
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.sqlite3',
             'NAME': BASE_DIR / 'db.sqlite3',
         }
     }
-    
-    # Configuración de base de datos para producción (desde variable de entorno)
-    DATABASE_URL = config('DATABASE_URL', default=None)
-    if DATABASE_URL:
-        DATABASES['default'] = dj_database_url.config(
-            default=DATABASE_URL, conn_max_age=600, ssl_require=True
-        )
     
 
 # Password validation
@@ -179,7 +166,7 @@ if CLOUDINARY_CLOUD_NAME and CLOUDINARY_API_KEY and CLOUDINARY_API_SECRET:
 # Configuración de almacenamiento (Django 5.x)
 # Separar STATIC files (CSS/JS) de MEDIA files (uploads de usuarios)
 if CLOUDINARY_CLOUD_NAME and CLOUDINARY_API_KEY and CLOUDINARY_API_SECRET:
-    # Producción: WhiteNoise para static, Cloudinary para media
+    # Producción (Railway): WhiteNoise para static, Cloudinary para media
     STORAGES = {
         "default": {
             "BACKEND": "cloudinary_storage.storage.MediaCloudinaryStorage",
@@ -190,7 +177,7 @@ if CLOUDINARY_CLOUD_NAME and CLOUDINARY_API_KEY and CLOUDINARY_API_SECRET:
     }
     MEDIA_URL = '/media/'
 else:
-    # Desarrollo: filesystem para ambos
+    # Desarrollo (Local): FileSystem para media, WhiteNoise para static
     STORAGES = {
         "default": {
             "BACKEND": "django.core.files.storage.FileSystemStorage",

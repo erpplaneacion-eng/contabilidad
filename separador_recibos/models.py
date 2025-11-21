@@ -82,6 +82,7 @@ class ReciboDetectado(models.Model):
     
     # Información extraída del recibo
     imagen_recibo = models.ImageField(upload_to='imagenes_recibos/', null=True, blank=True)
+    pdf_individual = models.FileField(upload_to='pdfs_individuales/', null=True, blank=True)
     nombre_beneficiario = models.CharField(max_length=255, blank=True)
     valor = models.DecimalField(max_digits=15, decimal_places=2, null=True, blank=True)
     entidad_bancaria = models.CharField(max_length=150, blank=True)

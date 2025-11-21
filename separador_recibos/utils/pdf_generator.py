@@ -143,6 +143,110 @@ class PDFGenerator:
         except Exception as e:
             logger.error(f"Error creando imagen desde datos: {str(e)}")
             raise
+
+    def generar_pdf_individual(self, recibo_data: Dict, imagen_data: Dict = None) -> bytes:
+        """
+        Genera PDF de un solo recibo individual
+
+        Args:
+            recibo_data: Diccionario con información del recibo
+            imagen_data: Diccionario con datos de imagen (opcional)
+
+        Returns:
+            bytes: PDF generado
+        """
+        try:
+            logger.info(f"Generando PDF individual para recibo #{recibo_data.get('numero_secuencial', 1)}")
+
+            buffer = io.BytesIO()
+
+            # Crear documento PDF
+            doc = SimpleDocTemplate(
+                buffer,
+                pagesize=LETTER,
+                rightMargin=self.margin,
+                leftMargin=self.margin,
+                topMargin=self.margin,
+                bottomMargin=self.margin
+            )
+
+            # Lista para almacenar elementos del PDF
+            story = []
+            styles = getSampleStyleSheet()
+
+            # Título del recibo
+            recibo_title_style = styles['Heading1']
+            recibo_title_style.textColor = green
+            recibo_title_style.alignment = TA_CENTER
+            story.append(Paragraph(f"Recibo #{recibo_data.get('numero_secuencial', 1)}", recibo_title_style))
+            story.append(Spacer(1, 0.2 * inch))
+
+            # Información del recibo
+            info_style = styles['Normal']
+            info_style.fontSize = 11
+            info_style.leading = 14
+
+            # Crear información del recibo
+            info_fields = [
+                f"<b>Beneficiario:</b> {recibo_data.get('nombre_beneficiario', 'N/A')}",
+                f"<b>Valor:</b> ${recibo_data.get('valor', 'N/A')}",
+                f"<b>Entidad:</b> {recibo_data.get('entidad_bancaria', 'N/A')}",
+                f"<b>Cuenta:</b> {recibo_data.get('numero_cuenta', 'N/A')}",
+                f"<b>Referencia:</b> {recibo_data.get('referencia', 'N/A')}",
+                f"<b>Fecha:</b> {recibo_data.get('fecha_aplicacion', 'N/A')}",
+                f"<b>Estado:</b> {recibo_data.get('estado_pago', 'N/A')}",
+                f"<b>Concepto:</b> {recibo_data.get('concepto', 'N/A')}"
+            ]
+
+            for field in info_fields:
+                story.append(Paragraph(field, info_style))
+                story.append(Spacer(1, 0.08 * inch))
+
+            story.append(Spacer(1, 0.25 * inch))
+
+            # Agregar imagen del recibo
+            if imagen_data and imagen_data.get('imagen_data'):
+                try:
+                    # Crear imagen desde datos
+                    img = self._crear_imagen_desde_data(imagen_data['imagen_data'])
+
+                    # Calcular dimensiones optimizadas
+                    max_width = self.width - (2 * self.margin)
+                    max_height = 4.5 * inch
+
+                    # Escalar imagen manteniendo proporción
+                    img_width, img_height = img.size
+                    scale = min(max_width / img_width, max_height / img_height)
+
+                    final_width = img_width * scale
+                    final_height = img_height * scale
+
+                    # Agregar imagen al PDF
+                    img_buffer = io.BytesIO()
+                    img.save(img_buffer, format='PNG')
+                    img_buffer.seek(0)
+
+                    rl_image = RLImage(img_buffer, width=final_width, height=final_height)
+                    story.append(rl_image)
+
+                except Exception as e:
+                    logger.error(f"Error agregando imagen del recibo: {str(e)}")
+                    error_msg = f"<i>Error cargando imagen: {str(e)}</i>"
+                    story.append(Paragraph(error_msg, info_style))
+            else:
+                story.append(Paragraph("<i>Imagen no disponible</i>", info_style))
+
+            # Construir PDF
+            doc.build(story)
+
+            pdf_bytes = buffer.getvalue()
+            logger.info(f"PDF individual generado exitosamente ({len(pdf_bytes)} bytes)")
+
+            return pdf_bytes
+
+        except Exception as e:
+            logger.error(f"Error generando PDF individual: {str(e)}")
+            raise
     
     def generar_pdf_simple(self, recibos_data: List[Dict]) -> bytes:
         """

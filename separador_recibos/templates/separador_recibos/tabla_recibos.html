@@ -53,7 +53,7 @@
             <div class="card border-0 shadow-sm" style="border-left: 4px solid #198754 !important;">
                 <div class="card-body">
                     <div class="d-flex justify-content-center align-items-center" style="min-height: 80px;">
-                        <a href="{% url 'separador_recibos:exportar_recibos' %}" class="btn btn-success">
+                        <a href="{% url 'separador_recibos:exportar_recibos' %}?{{ request.GET.urlencode }}" class="btn btn-success">
                             <i class="fas fa-download me-1"></i> Exportar a CSV
                         </a>
                     </div>
@@ -273,7 +273,13 @@
                                        title="Ver detalles">
                                         <i class="fas fa-eye"></i>
                                     </a>
-                                    
+                                    {% if recibo.pdf_individual %}
+                                    <a href="{{ recibo.pdf_individual.url }}"
+                                       class="btn btn-sm btn-outline-danger"
+                                       title="Descargar PDF" download>
+                                        <i class="fas fa-file-pdf"></i>
+                                    </a>
+                                    {% endif %}
                                     {% if recibo.imagen_recibo %}
                                     <a href="{% url 'separador_recibos:descargar_imagen' recibo.id %}"
                                        class="btn btn-sm btn-outline-info"

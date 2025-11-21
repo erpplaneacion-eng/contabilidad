@@ -16,7 +16,11 @@
                     </p>
                 </div>
                 <div class="btn-group">
-                    
+                    {% if recibo.pdf_individual %}
+                    <a href="{{ recibo.pdf_individual.url }}" class="btn btn-outline-primary" download>
+                        <i class="fas fa-file-pdf"></i> PDF
+                    </a>
+                    {% endif %}
                     <a href="{% url 'separador_recibos:descargar_imagen' recibo.id %}" class="btn btn-outline-success">
                         <i class="fas fa-download"></i> Imagen
                     </a>
@@ -292,6 +296,11 @@
                         <div class="col-md-6">
                             <h6>Exportación</h6>
                             <div class="btn-group" role="group">
+                                {% if recibo.pdf_individual %}
+                                <a href="{{ recibo.pdf_individual.url }}" class="btn btn-outline-danger" download>
+                                    <i class="fas fa-file-pdf"></i> PDF
+                                </a>
+                                {% endif %}
                                 <a href="{% url 'separador_recibos:descargar_imagen' recibo.id %}" class="btn btn-outline-primary">
                                     <i class="fas fa-download"></i> Imagen
                                 </a>

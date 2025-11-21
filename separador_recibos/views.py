@@ -84,7 +84,7 @@ def procesar_recibo_sincrono(procesamiento_id):
             # Limpiar archivo temporal del PDF si fue descargado
             StorageHelper.limpiar_archivo_temporal(pdf_path, pdf_es_temporal)
 
-        # Paso 3: Guardar información en base de datos
+        # Paso 3: Guardar información en base de datos y generar PDFs individuales
         logger.info("Guardando información de recibos en base de datos...")
         for i, (recibo_info, imagen_info) in enumerate(zip(recibos_detectados, imagenes_data)):
             try:
@@ -119,6 +119,36 @@ def procesar_recibo_sincrono(procesamiento_id):
                         )
                     except Exception as e:
                         logger.warning(f"Error guardando imagen para recibo {i + 1}: {str(e)}")
+
+                # Generar y guardar PDF individual para este recibo
+                try:
+                    logger.info(f"Generando PDF individual para recibo {i + 1}...")
+                    recibo_data = {
+                        'numero_secuencial': i + 1,
+                        'nombre_beneficiario': recibo_info.get('beneficiario', ''),
+                        'valor': float(recibo_info.get('valor', 0)) if recibo_info.get('valor') else 0,
+                        'entidad_bancaria': recibo_info.get('entidad', ''),
+                        'numero_cuenta': recibo_info.get('numero_cuenta', ''),
+                        'referencia': recibo_info.get('referencia', ''),
+                        'fecha_aplicacion': str(recibo_info.get('fecha')) if recibo_info.get('fecha') else '',
+                        'concepto': recibo_info.get('concepto', ''),
+                        'estado_pago': recibo_info.get('estado', '')
+                    }
+
+                    pdf_generator = PDFGenerator()
+                    pdf_bytes = pdf_generator.generar_pdf_individual(recibo_data, imagen_info)
+
+                    # Guardar PDF individual
+                    pdf_filename = f"recibo_{procesamiento_id}_{i + 1}.pdf"
+                    recibo.pdf_individual.save(
+                        pdf_filename,
+                        ContentFile(pdf_bytes),
+                        save=True
+                    )
+                    logger.info(f"PDF individual guardado: {pdf_filename}")
+
+                except Exception as e:
+                    logger.warning(f"Error generando PDF individual para recibo {i + 1}: {str(e)}")
 
             except Exception as e:
                 logger.error(f"Error guardando recibo {i + 1}: {str(e)}")
@@ -584,15 +614,63 @@ def validar_recibo(request, recibo_id):
 
 @login_required
 def exportar_recibos(request):
-    """Vista para exportar recibos a CSV"""
+    """Vista para exportar recibos a CSV con filtros aplicados"""
     try:
         import csv
         from django.http import HttpResponse
-        
-        # Obtener datos filtrados
+
+        # Obtener queryset base
         queryset = ReciboDetectado.objects.filter(
             procesamiento__usuario=request.user
-        )
+        ).select_related('procesamiento')
+
+        # Aplicar filtros del formulario (si existen en GET)
+        form = FiltrosRecibosForm(request.GET)
+        if form.is_valid():
+            # Reutilizar la misma lógica de filtrado de TablaRecibosView
+            beneficiario = form.cleaned_data.get('beneficiario')
+            entidad = form.cleaned_data.get('entidad')
+            valor_minimo = form.cleaned_data.get('valor_minimo')
+            valor_maximo = form.cleaned_data.get('valor_maximo')
+            fecha_desde = form.cleaned_data.get('fecha_desde')
+            fecha_hasta = form.cleaned_data.get('fecha_hasta')
+            estado = form.cleaned_data.get('estado')
+            orden_por = form.cleaned_data.get('orden_por')
+            direccion = form.cleaned_data.get('direccion', 'asc')
+
+            if beneficiario:
+                queryset = queryset.filter(nombre_beneficiario__icontains=beneficiario)
+
+            if entidad:
+                queryset = queryset.filter(entidad_bancaria=entidad)
+
+            if valor_minimo:
+                queryset = queryset.filter(valor__gte=valor_minimo)
+
+            if valor_maximo:
+                queryset = queryset.filter(valor__lte=valor_maximo)
+
+            if fecha_desde:
+                queryset = queryset.filter(fecha_aplicacion__gte=fecha_desde)
+
+            if fecha_hasta:
+                queryset = queryset.filter(fecha_aplicacion__lte=fecha_hasta)
+
+            if estado == 'validado':
+                queryset = queryset.filter(validado=True)
+            elif estado == 'no_validado':
+                queryset = queryset.filter(validado=False)
+
+            # Aplicar ordenamiento
+            if not orden_por:
+                orden_por = 'numero_secuencial'
+
+            if direccion == 'desc':
+                orden_por = f'-{orden_por}'
+
+            queryset = queryset.order_by(orden_por)
+        else:
+            queryset = queryset.order_by('numero_secuencial')
         
         # Crear respuesta HTTP
         response = HttpResponse(content_type='text/csv')
@@ -600,22 +678,27 @@ def exportar_recibos(request):
         
         writer = csv.writer(response)
         writer.writerow([
-            'Número', 'Beneficiario', 'Valor', 'Entidad', 'Cuenta', 
-            'Referencia', 'Fecha', 'Concepto', 'Estado', 'Validado'
+            'Número', 'Beneficiario', 'Documento', 'Valor', 'Entidad',
+            'Tipo Cuenta', 'Número Cuenta', 'Referencia', 'Fecha Aplicación',
+            'Concepto', 'Estado Pago', 'Validado', 'Fecha Procesamiento', 'ID Procesamiento'
         ])
-        
+
         for recibo in queryset:
             writer.writerow([
                 recibo.numero_secuencial,
                 recibo.nombre_beneficiario or '',
+                recibo.documento or '',
                 recibo.valor or '',
                 recibo.entidad_bancaria or '',
+                recibo.tipo_cuenta or '',
                 recibo.numero_cuenta or '',
                 recibo.referencia or '',
-                recibo.fecha_aplicacion or '',
+                recibo.fecha_aplicacion.strftime('%Y-%m-%d') if recibo.fecha_aplicacion else '',
                 recibo.concepto or '',
                 recibo.estado_pago or '',
-                'Sí' if recibo.validado else 'No'
+                'Sí' if recibo.validado else 'No',
+                recibo.procesamiento.fecha_subida.strftime('%Y-%m-%d %H:%M:%S') if recibo.procesamiento else '',
+                str(recibo.procesamiento.id) if recibo.procesamiento else ''
             ])
         
         return response
@@ -660,4 +743,108 @@ def exportar_imagenes_seleccionadas(request):
 
     response = HttpResponse(zip_buffer, content_type='application/zip')
     response['Content-Disposition'] = f'attachment; filename="recibos_seleccionados_{timezone.now().strftime("%Y%m%d_%H%M%S")}.zip"'
+    return response
+
+
+@login_required
+def descargar_pdfs_procesamiento(request, procesamiento_id):
+    """Descarga todos los PDFs individuales de un procesamiento en un ZIP"""
+    try:
+        # Verificar que el procesamiento pertenece al usuario
+        procesamiento = get_object_or_404(
+            ProcesamientoRecibo,
+            id=procesamiento_id,
+            usuario=request.user
+        )
+
+        # Obtener todos los recibos de este procesamiento que tengan PDF individual
+        recibos = ReciboDetectado.objects.filter(
+            procesamiento=procesamiento,
+            pdf_individual__isnull=False
+        ).order_by('numero_secuencial')
+
+        if not recibos.exists():
+            return HttpResponse("No hay PDFs individuales disponibles para este procesamiento", status=404)
+
+        # Crear un archivo ZIP en memoria
+        zip_buffer = io.BytesIO()
+        with zipfile.ZipFile(zip_buffer, 'w', zipfile.ZIP_DEFLATED) as zip_file:
+            for recibo in recibos:
+                try:
+                    # Usar StorageHelper para manejar archivos locales y remotos
+                    pdf_path, pdf_es_temporal = StorageHelper.obtener_path_archivo(recibo.pdf_individual)
+                    try:
+                        with open(pdf_path, 'rb') as pdf_file:
+                            # Nombre del archivo en el ZIP
+                            file_name = f"recibo_{recibo.numero_secuencial:03d}_{recibo.nombre_beneficiario or 'sin_nombre'}.pdf"
+                            # Limpiar nombre de archivo
+                            file_name = file_name.replace(' ', '_').replace('/', '-')
+                            # Escribir el PDF en el ZIP
+                            zip_file.writestr(file_name, pdf_file.read())
+                    finally:
+                        # Limpiar archivo temporal si fue descargado
+                        StorageHelper.limpiar_archivo_temporal(pdf_path, pdf_es_temporal)
+                except Exception as e:
+                    logger.warning(f"No se pudo agregar PDF del recibo {recibo.numero_secuencial}: {str(e)}")
+
+        zip_buffer.seek(0)
+
+        # Nombre del archivo ZIP
+        filename = f"recibos_pdfs_{procesamiento_id}_{timezone.now().strftime('%Y%m%d_%H%M%S')}.zip"
+
+        response = HttpResponse(zip_buffer, content_type='application/zip')
+        response['Content-Disposition'] = f'attachment; filename="{filename}"'
+        return response
+
+    except Exception as e:
+        logger.error(f"Error descargando PDFs en ZIP: {str(e)}")
+        return HttpResponse("Error generando archivo ZIP", status=500)
+
+
+@login_required
+def descargar_pdfs_seleccionados(request):
+    """Descarga PDFs individuales seleccionados en un ZIP"""
+    if request.method != 'POST':
+        return HttpResponse("Método no permitido", status=405)
+
+    # Obtener IDs de recibos seleccionados
+    recibo_ids = request.POST.getlist('recibo_ids[]')
+    if not recibo_ids:
+        return HttpResponse("No se seleccionaron recibos", status=400)
+
+    # Obtener recibos que pertenecen al usuario y tienen PDF individual
+    recibos = ReciboDetectado.objects.filter(
+        id__in=recibo_ids,
+        procesamiento__usuario=request.user,
+        pdf_individual__isnull=False
+    ).order_by('numero_secuencial')
+
+    if not recibos.exists():
+        return HttpResponse("No hay PDFs disponibles para los recibos seleccionados", status=404)
+
+    # Crear un archivo ZIP en memoria
+    zip_buffer = io.BytesIO()
+    with zipfile.ZipFile(zip_buffer, 'w', zipfile.ZIP_DEFLATED) as zip_file:
+        for recibo in recibos:
+            try:
+                # Usar StorageHelper para manejar archivos locales y remotos
+                pdf_path, pdf_es_temporal = StorageHelper.obtener_path_archivo(recibo.pdf_individual)
+                try:
+                    with open(pdf_path, 'rb') as pdf_file:
+                        # Nombre del archivo en el ZIP
+                        file_name = f"recibo_{recibo.numero_secuencial:03d}_{recibo.nombre_beneficiario or 'sin_nombre'}.pdf"
+                        # Limpiar nombre de archivo
+                        file_name = file_name.replace(' ', '_').replace('/', '-')
+                        # Escribir el PDF en el ZIP
+                        zip_file.writestr(file_name, pdf_file.read())
+                finally:
+                    # Limpiar archivo temporal si fue descargado
+                    StorageHelper.limpiar_archivo_temporal(pdf_path, pdf_es_temporal)
+            except Exception as e:
+                logger.warning(f"No se pudo agregar PDF del recibo {recibo.numero_secuencial}: {str(e)}")
+
+    zip_buffer.seek(0)
+
+    response = HttpResponse(zip_buffer, content_type='application/zip')
+    response['Content-Disposition'] = f'attachment; filename="recibos_pdfs_seleccionados_{timezone.now().strftime("%Y%m%d_%H%M%S")}.zip"'
     return response

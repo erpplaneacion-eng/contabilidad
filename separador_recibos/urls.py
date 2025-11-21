@@ -25,4 +25,6 @@ urlpatterns = [
     # URLs de exportación
     path('exportar/', views.exportar_recibos, name='exportar_recibos'),
     path('exportar-imagenes/', views.exportar_imagenes_seleccionadas, name='exportar_imagenes_seleccionadas'),
+    path('descargar-pdfs/<uuid:procesamiento_id>/', views.descargar_pdfs_procesamiento, name='descargar_pdfs_procesamiento'),
+    path('descargar-pdfs-seleccionados/', views.descargar_pdfs_seleccionados, name='descargar_pdfs_seleccionados'),
 ]
